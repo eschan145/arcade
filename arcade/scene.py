@@ -14,6 +14,9 @@ from arcade.tilemap import TileMap
 
 from warnings import warn
 
+__all__ = ["Scene"]
+
+
 class Scene:
     """
     Class that represents a `scene` object. Most games will use Scenes to render their Sprites.
@@ -25,7 +28,7 @@ class Scene:
     def __init__(self) -> None:
         self._sprite_lists: List[SpriteList] = []
         self._name_mapping: Dict[str, SpriteList] = {}
-        
+
     @classmethod
     def from_tilemap(cls, tilemap: TileMap) -> "Scene":
         """
@@ -180,7 +183,6 @@ class Scene:
         Add a SpriteList to the scene with the specified name after a specific SpriteList.
 
         This will add a new SpriteList to the scene after the specified SpriteList in the draw order.
-
         If no SpriteList is supplied via the `sprite_list` parameter then a new one will be
         created, and the `use_spatial_hash` parameter will be respected for that creation.
 
@@ -266,8 +268,8 @@ class Scene:
     def on_update(self, delta_time: float = 1 / 60, names: Optional[List[str]] = None) -> None:
         """
         Used to call on_update of SpriteLists contained in the scene.
-        Similar to update() but allows passing a delta_time variable.
 
+        Similar to update() but allows passing a delta_time variable.
         If `names` parameter is provided then only the specified spritelists
         will be updated. If `names` is not provided, then every SpriteList
         in the scene will have on_update called.
@@ -353,4 +355,4 @@ class Scene:
 
         for sprite_list in self._sprite_lists:
             sprite_list.draw_hit_boxes(color, line_thickness)
-    
+
