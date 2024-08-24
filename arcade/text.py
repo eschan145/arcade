@@ -15,7 +15,10 @@ from arcade.resources import resolve
 from arcade.texture_atlas import TextureAtlasBase
 from arcade.types import Color, Point, RGBOrA255
 
-__all__ = ["load_font", "Text", "create_text_sprite", "draw_text"]
+__all__ = ["DEFAULT_FONT", "load_font", "Text", "create_text_sprite", "draw_text"]
+
+#: Set the default font used in text rendering
+DEFAULT_FONT = ("calibri", "arial")
 
 
 def load_font(path: str | Path) -> None:
@@ -209,7 +212,7 @@ class Text:
         font_size: float = 12,
         width: int | None = None,
         align: str = "left",
-        font_name: FontNameOrNames = ("calibri", "arial"),
+        font_name: FontNameOrNames = DEFAULT_FONT,
         bold: bool | str = False,
         italic: bool = False,
         anchor_x: str = "left",
@@ -620,7 +623,7 @@ def create_text_sprite(
     font_size: float = 12.0,
     width: int | None = None,
     align: str = "left",
-    font_name: FontNameOrNames = ("calibri", "arial"),
+    font_name: FontNameOrNames = DEFAULT_FONT,
     bold: bool | str = False,
     italic: bool = False,
     anchor_x: str = "left",
@@ -715,7 +718,7 @@ def draw_text(
     font_size: float = 12.0,
     width: int | None = None,
     align: str = "left",
-    font_name: FontNameOrNames = ("calibri", "arial"),
+    font_name: FontNameOrNames = DEFAULT_FONT,
     bold: bool | str = False,
     italic: bool = False,
     anchor_x: str = "left",
