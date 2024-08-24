@@ -1,8 +1,48 @@
 """ Physics engine tests. """
+import copy
+
+import pytest
 
 import arcade
 
 OUT_OF_THE_WAY = (250, 250)
+
+
+def check_spritelists_prop_clears_instead_of_overwrites(engine, prop_name: str):
+    """Some properties are backed by lists which shouldn't be recreated.
+
+    Implementing them this way is helpful for cases when a user has lots
+    of different SpriteLists added to the physics engine's lists. It
+    helps by avoiding:
+
+    * extra allocations from copying lists (see arcade.utils.Chain)
+    * Avoid GC thrash from creating & deleting items
+     """
+    def _get_current():
+        return getattr(engine, f'_{prop_name}')
+
+    original_list = _get_current()
+
+    # Make sure we don't replace it when adding
+    setattr(engine, prop_name, [arcade.SpriteList()])
+    assert _get_current() is original_list
+
+    # Ensure setting a property to None doesn't kill it
+    setattr(engine, prop_name, None)
+    assert _get_current() is original_list
+
+    # Ensure empty iterables don't clobber
+    setattr(engine, prop_name, [])
+    assert _get_current() is original_list
+    setattr(engine, prop_name, ())
+    assert _get_current() is original_list
+    setattr(engine, prop_name, (arcade.SpriteList() for _ in range(0)))
+
+    # We support the del keyword on these properties for some reason,
+    # but it should only clear the internal list instead of deleting the
+    # property.
+    delattr(engine, prop_name)
+    assert _get_current() is original_list
 
 
 def basic_tests(moving_sprite, wall_list, physics_engine):
@@ -218,6 +258,7 @@ def simple_engine_tests(moving_sprite, wall_list, physics_engine):
         else:
             assert len(collisions) == 1
 
+    check_spritelists_prop_clears_instead_of_overwrites(physics_engine, 'walls')
 
 def platformer_tests(moving_sprite, wall_list, physics_engine):
     wall_sprite_1 = wall_list[0]
@@ -286,6 +327,17 @@ def platformer_tests(moving_sprite, wall_list, physics_engine):
     collisions = physics_engine.update()
     assert moving_sprite.position == (3, -6)
 
+    check_spritelists_prop_clears_instead_of_overwrites(physics_engine, 'platforms')
+    check_spritelists_prop_clears_instead_of_overwrites(physics_engine, 'ladders')
+
+
+# Temp fix for https://github.com/pythonarcade/arcade/issues/2074
+def nocopy_tests(physics_engine):
+    with pytest.raises(NotImplementedError):
+        _ = copy.copy(physics_engine)
+    with pytest.raises(NotImplementedError):
+        _ = copy.deepcopy(physics_engine)
+
 
 def test_main(window: arcade.Window):
     character_list = arcade.SpriteList()
@@ -303,9 +355,11 @@ def test_main(window: arcade.Window):
     physics_engine = arcade.PhysicsEngineSimple(moving_sprite, wall_list)
     basic_tests(moving_sprite, wall_list, physics_engine)
     simple_engine_tests(moving_sprite, wall_list, physics_engine)
+    nocopy_tests(physics_engine)
 
     physics_engine = arcade.PhysicsEnginePlatformer(
         moving_sprite, wall_list, gravity_constant=0.0
     )
     basic_tests(moving_sprite, wall_list, physics_engine)
     platformer_tests(moving_sprite, wall_list, physics_engine)
+    nocopy_tests(physics_engine)

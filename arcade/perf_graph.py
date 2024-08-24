@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import random
-from typing import List
 
 import pyglet.clock
-from pyglet.shapes import Line
 from pyglet.graphics import Batch
+from pyglet.shapes import Line
 
 import arcade
-from arcade.types import Color, RGBA255
+from arcade.types import RGBA255, Color
 
 __all__ = ["PerfGraph"]
 
@@ -31,37 +32,47 @@ class PerfGraph(arcade.Sprite):
     automatically redrawn to this internal
     :class:`Texture <arcade.Texture>` every ``update_rate`` seconds.
 
-    :param width: The width of the chart texture in pixels
-    :param height: The height of the chart texture in pixels
-    :param graph_data: The pyglet event handler or statistic to track
-    :param update_rate: How often the graph updates, in seconds
-    :param background_color: The background color of the chart
-    :param data_line_color: Color of the line tracking drawn
-    :param axis_color: The color to draw the x & y axes in
-    :param font_color: The color of the label font
-    :param font_size: The size of the label font in points
-    :param y_axis_num_lines: How many grid lines should be used to
-                             divide the y scale of the graph.
-    :param view_y_scale_step: The graph's view area will be scaled to a
-                              multiple of this value to fit to the data
-                              currently displayed.
+    Args:
+        width (int):
+            The width of the chart texture in pixels
+        height (int):
+            The height of the chart texture in pixels
+        graph_data (str):
+            The pyglet event handler or statistic to track
+        update_rate (float):
+            How often the graph updates, in seconds
+        background_color (RGBA255):
+            The background color of the chart
+        data_line_color (RGBA255):
+            Color of the line tracking drawn
+        axis_color (RGBA255):
+            The color to draw the x & y axes in
+        font_color (RGBA255):
+            The color of the label font
+        font_size (int):
+            The size of the label font in points
+        y_axis_num_lines (int):
+            How many grid lines should be used to divide the y scale of the graph.
+        view_y_scale_step (float):
+            The graph's view area will be scaled to a multiple of this value to
+            fit to the data currently displayed.
     """
 
     def __init__(
-            self,
-            width: int, height: int,
-            graph_data: str = "FPS",
-            update_rate: float = 0.1,
-            background_color: RGBA255 = arcade.color.BLACK,
-            data_line_color: RGBA255 = arcade.color.WHITE,
-            axis_color: RGBA255 = arcade.color.DARK_YELLOW,
-            grid_color: RGBA255 = arcade.color.DARK_YELLOW,
-            font_color: RGBA255 = arcade.color.WHITE,
-            font_size: int = 10,
-            y_axis_num_lines: int = 4,
-            view_y_scale_step: float = 20.0,
+        self,
+        width: int,
+        height: int,
+        graph_data: str = "FPS",
+        update_rate: float = 0.1,
+        background_color: RGBA255 = arcade.color.BLACK,
+        data_line_color: RGBA255 = arcade.color.WHITE,
+        axis_color: RGBA255 = arcade.color.DARK_YELLOW,
+        grid_color: RGBA255 = arcade.color.DARK_YELLOW,
+        font_color: RGBA255 = arcade.color.WHITE,
+        font_size: int = 10,
+        y_axis_num_lines: int = 4,
+        view_y_scale_step: float = 20.0,
     ):
-
         unique_id = str(random.random())
         self.minimap_texture = arcade.Texture.create_empty(unique_id, (width, height))
         super().__init__(self.minimap_texture)
@@ -71,6 +82,7 @@ class PerfGraph(arcade.Sprite):
         # not cache vertices, so there is no need to make this attribute
         # a property that updates geometry when set.
         self.line_color = Color.from_iterable(data_line_color)
+        """The color of the line tracking the data."""
 
         # Store visual style info for cached pyglet shape geometry
         self._background_color = Color.from_iterable(background_color)
@@ -84,7 +96,9 @@ class PerfGraph(arcade.Sprite):
 
         # Variables for rendering the data line
         self.graph_data = graph_data
-        self._data_to_graph: List[float] = []
+        """The graphed data type, either "FPS" or a pyglet event handler name."""
+
+        self._data_to_graph: list[float] = []
         self._view_max_value = 0.0  # We'll calculate this once we have data
         self._view_y_scale_step = view_y_scale_step
         self._view_height = self._texture.height - self._bottom_y  # type: ignore
@@ -95,30 +109,39 @@ class PerfGraph(arcade.Sprite):
         self._pyglet_batch = Batch()  # Used to draw graph elements
 
         # Convenient storage for iteration during color updates
-        self._vertical_axis_text_objects: List[arcade.Text] = []
-        self._all_text_objects: List[arcade.Text] = []
-        self._grid_lines: List[Line] = []
+        self._vertical_axis_text_objects: list[arcade.Text] = []
+        self._all_text_objects: list[arcade.Text] = []
+        self._grid_lines: list[Line] = []
 
         # Create the bottom label text object
         self._bottom_label = arcade.Text(
-            graph_data, 0, 2, self._font_color,
-            self._font_size, align="center", width=int(width)
+            graph_data,
+            0,
+            2,
+            self._font_color,
+            self._font_size,
+            align="center",
+            width=int(width),
         )
         self._all_text_objects.append(self._bottom_label)
 
         # Create the axes
         self._x_axis = Line(
-            self._left_x, self._bottom_y,
-            self._left_x, height,
+            self._left_x,
+            self._bottom_y,
+            self._left_x,
+            height,
             batch=self._pyglet_batch,
-            color=self._axis_color
+            color=self._axis_color,
         )
 
         self._y_axis = Line(
-            self._left_x, self._bottom_y,
-            width, self._bottom_y,
+            self._left_x,
+            self._bottom_y,
+            width,
+            self._bottom_y,
             batch=self._pyglet_batch,
-            color=self._axis_color
+            color=self._axis_color,
         )
 
         # Create the Y scale text objects & lines
@@ -127,15 +150,22 @@ class PerfGraph(arcade.Sprite):
             self._vertical_axis_text_objects.append(
                 arcade.Text(
                     "0",  # Ensure the lowest y axis label is always 0
-                    self._left_x, int(y_level),
-                    self._font_color, self._font_size,
-                    anchor_x="right", anchor_y="center"))
+                    self._left_x,
+                    int(y_level),
+                    self._font_color,
+                    self._font_size,
+                    anchor_x="right",
+                    anchor_y="center",
+                )
+            )
             self._grid_lines.append(
                 Line(
-                    self._left_x, y_level,
-                    width, y_level,
+                    self._left_x,
+                    y_level,
+                    width,
+                    y_level,
                     batch=self._pyglet_batch,
-                    color=self._grid_color
+                    color=self._grid_color,
                 )
             )
 
@@ -146,6 +176,7 @@ class PerfGraph(arcade.Sprite):
 
     @property
     def background_color(self) -> Color:
+        """Get or set the background color of the graph."""
         return self._background_color
 
     @background_color.setter
@@ -154,6 +185,7 @@ class PerfGraph(arcade.Sprite):
 
     @property
     def grid_color(self) -> Color:
+        """Get or set the color of the grid lines."""
         return self._grid_color
 
     @grid_color.setter
@@ -164,6 +196,7 @@ class PerfGraph(arcade.Sprite):
 
     @property
     def axis_color(self) -> Color:
+        """Get or set the color of the x and y axes."""
         return self._axis_color
 
     @axis_color.setter
@@ -174,6 +207,7 @@ class PerfGraph(arcade.Sprite):
 
     @property
     def font_size(self) -> int:
+        """Get or set the font size of the labels."""
         return self._font_size
 
     @font_size.setter
@@ -184,6 +218,7 @@ class PerfGraph(arcade.Sprite):
 
     @property
     def font_color(self) -> Color:
+        """Get or set the font color of the labels."""
         return self._font_color
 
     @font_color.setter
@@ -193,11 +228,9 @@ class PerfGraph(arcade.Sprite):
         for text in self._all_text_objects:
             text.color = new_color
 
-    def remove_from_sprite_lists(self):
+    def remove_from_sprite_lists(self) -> None:
         """
         Remove the sprite from all lists and cancel the update event.
-
-        :return:
         """
         super().remove_from_sprite_lists()
 
@@ -206,15 +239,16 @@ class PerfGraph(arcade.Sprite):
         # garbage collection.
         pyglet.clock.unschedule(self.update)
 
-    def update_graph(self, delta_time: float):
+    def update_graph(self, delta_time: float) -> None:
         """
         Update the graph by redrawing the internal texture data.
 
         .. warning:: You do not need to call this method! It will be
                      called automatically!
 
-        :param delta_time: Elapsed time in seconds. Passed by the pyglet
-                           scheduler.
+        Args:
+            delta_time: Elapsed time in seconds. Passed by the pyglet
+                        scheduler.
         """
 
         # Skip update if there is no SpriteList that can draw this graph
@@ -222,10 +256,12 @@ class PerfGraph(arcade.Sprite):
             return
 
         sprite_list = self.sprite_lists[0]
+        atlas = sprite_list.atlas
 
         # Clear and return if timings are disabled
         if not arcade.timings_enabled():
-            with sprite_list.atlas.render_into(self.minimap_texture, projection=self.proj) as fbo:
+            # Please forgive the ugly spacing. It makes type checking work.
+            with atlas.render_into(self.minimap_texture, projection=self.proj) as fbo:  # type: ignore
                 fbo.clear(color=(0, 0, 0, 255))
             return
 
@@ -282,10 +318,11 @@ class PerfGraph(arcade.Sprite):
                 text_object.text = f"{int(index * view_y_legend_increment)}"
 
         # Render to the internal texture
-        with sprite_list.atlas.render_into(self.minimap_texture, projection=self.proj) as fbo:
+        # This ugly spacing is intentional to make type checking work.
+        with atlas.render_into(self.minimap_texture, projection=self.proj) as fbo:  # type: ignore
 
             # Set the background color
-            fbo.clear(self.background_color)
+            fbo.clear(color=self.background_color)
 
             # Draw lines & their labels
             for text in self._all_text_objects:

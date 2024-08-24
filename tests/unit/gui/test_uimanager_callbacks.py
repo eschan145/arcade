@@ -1,7 +1,13 @@
 import arcade
 from arcade.gui import UIMousePressEvent, UIMouseReleaseEvent, UIKeyReleaseEvent
-from arcade.gui.events import UIMouseScrollEvent, UIMouseMovementEvent, UIKeyPressEvent, UITextEvent, UITextMotionEvent, \
-    UITextMotionSelectEvent
+from arcade.gui.events import (
+    UIMouseScrollEvent,
+    UIMouseMovementEvent,
+    UIKeyPressEvent,
+    UITextInputEvent,
+    UITextMotionEvent,
+    UITextMotionSelectEvent,
+)
 from arcade.gui.widgets import UIDummy
 from arcade.key import MOTION_UP
 from . import record_ui_events
@@ -94,7 +100,7 @@ def test_on_text_passes_an_event(uimanager):
         uimanager.on_text("a")
 
     event = records[-1]
-    assert isinstance(event, UITextEvent)
+    assert isinstance(event, UITextInputEvent)
     assert event.text == "a"
 
 

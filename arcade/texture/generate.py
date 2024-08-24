@@ -1,35 +1,38 @@
-import logging
-from typing import Optional
+from __future__ import annotations
 
 import PIL.Image
-import PIL.ImageOps
 import PIL.ImageDraw
+import PIL.ImageOps
 
-from arcade.types import RGBA255
-from arcade.math import lerp
+from arcade import cache
 from arcade.color import TRANSPARENT_BLACK
 from arcade.hitbox import HitBoxAlgorithm
-from arcade import cache
-from .texture import Texture, ImageData
+from arcade.math import lerp
+from arcade.types import RGBA255
 
-LOG = logging.getLogger(__name__)
+from .texture import ImageData, Texture
 
 
 def make_circle_texture(
     diameter: int,
     color: RGBA255,
-    name: Optional[str] = None,
-    hitbox_algorithm: Optional[HitBoxAlgorithm] = None,
+    name: str | None = None,
+    hit_box_algorithm: HitBoxAlgorithm | None = None,
 ) -> Texture:
     """
-    Return a Texture of a circle with the given diameter and color.
+    Creates a :class:`Texture` of a circle with the given diameter and color.
 
-    :param int diameter: Diameter of the circle and dimensions of the square :class:`Texture` returned.
-    :param RGBA255 color: Color of the circle as a
-        :py:class:`~arcade.types.Color` instance a 3 or 4 tuple.
-    :param str name: Custom or pre-chosen name for this texture
-
-    :returns: New :class:`Texture` object.
+    Args:
+        diameter:
+            Diameter of the circle and dimensions of the square :class:`Texture` returned.
+        color:
+            Color of the circle as a :py:class:`~arcade.types.Color` instance a 3 or 4 tuple.
+        name (optional):
+            A unique name for the texture. If not provided, a name will be generated.
+            This is used for caching and unique identifier for texture atlases.
+        hit_box_algorithm (optional):
+            The hit box algorithm to use for this texture. If not provided, the default
+            hit box algorithm will be used.
     """
     name = name or cache.crate_str_from_values(
         "circle_texture", diameter, color[0], color[1], color[2]
@@ -38,7 +41,7 @@ def make_circle_texture(
     img = PIL.Image.new("RGBA", (diameter, diameter), bg_color)
     draw = PIL.ImageDraw.Draw(img)
     draw.ellipse((0, 0, diameter - 1, diameter - 1), fill=color)
-    return Texture(ImageData(img, hash=name), hit_box_algorithm=hitbox_algorithm)
+    return Texture(ImageData(img, hash=name), hit_box_algorithm=hit_box_algorithm)
 
 
 def make_soft_circle_texture(
@@ -46,22 +49,28 @@ def make_soft_circle_texture(
     color: RGBA255,
     center_alpha: int = 255,
     outer_alpha: int = 0,
-    name: Optional[str] = None,
-    hit_box_algorithm: Optional[HitBoxAlgorithm] = None,
+    name: str | None = None,
+    hit_box_algorithm: HitBoxAlgorithm | None = None,
 ) -> Texture:
     """
-    Return a :class:`Texture` of a circle with the given diameter and color, fading out at its edges.
+    Creates a :class:`Texture` of a circle with the given diameter and color,
+    fading out at its edges.
 
-    :param int diameter: Diameter of the circle and dimensions of the square :class:`Texture` returned.
-    :param RGBA255 color: Color of the circle as a 4-length tuple or
-        :py:class:`~arcade.types.Color` instance.
-    :param int center_alpha: Alpha value of the circle at its center.
-    :param int outer_alpha: Alpha value of the circle at its edges.
-    :param str name: Custom or pre-chosen name for this texture
-    :param str hit_box_algorithm: The hit box algorithm
-
-    :returns: New :class:`Texture` object.
-    :rtype: arcade.Texture
+    Args:
+        diameter:
+            Diameter of the circle and dimensions of the square :class:`Texture` returned.
+        color:
+            Color of the circle as a 4-length tuple or :py:class:`~arcade.types.Color` instance.
+        center_alpha:
+            Alpha value of the circle at its center.
+        outer_alpha:
+            Alpha value of the circle at its edges.
+        name (optional):
+            A unique name for the texture. If not provided, a name will be generated.
+            This is used for caching and unique identifier for texture atlases.
+        hit_box_algorithm (optional):
+            The hit box algorithm to use for this texture. If not provided, the default
+            hit box algorithm will be used.
     """
     # Name must be unique for caching
     name = cache.crate_str_from_values(
@@ -101,18 +110,24 @@ def make_soft_square_texture(
     color: RGBA255,
     center_alpha: int = 255,
     outer_alpha: int = 0,
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> Texture:
     """
-    Return a :class:`Texture` of a square with the given diameter and color, fading out at its edges.
+    Creates a :class:`Texture` of a square with the given diameter and color,
+    fading out at its edges.
 
-    :param int size: Diameter of the square and dimensions of the square Texture returned.
-    :param RGBA255 color: Color of the square.
-    :param int center_alpha: Alpha value of the square at its center.
-    :param int outer_alpha: Alpha value of the square at its edges.
-    :param str name: Custom or pre-chosen name for this texture
-
-    :returns: New :class:`Texture` object.
+    Args:
+        size:
+            Diameter of the square and dimensions of the square Texture returned.
+        color:
+            Color of the square.
+        center_alpha:
+            Alpha value of the square at its center.
+        outer_alpha:
+            Alpha value of the square at its edges.
+        name (optional):
+            A unique name for the texture. If not provided, a name will be generated.
+            This is used for caching and unique identifier for texture atlases.
     """
     # Build name used for caching
     name = name or cache.crate_str_from_values(
@@ -128,8 +143,6 @@ def make_soft_square_texture(
     for cur_size in range(0, half_size):
         alpha = int(lerp(outer_alpha, center_alpha, cur_size / half_size))
         clr = (color[0], color[1], color[2], alpha)
-        draw.rectangle(
-            (cur_size, cur_size, size - cur_size, size - cur_size), clr, None
-        )
+        draw.rectangle((cur_size, cur_size, size - cur_size, size - cur_size), clr, None)
 
     return Texture(img, name=name)

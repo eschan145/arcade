@@ -15,8 +15,8 @@ import arcade
 
 SPRITE_SCALING = 0.5
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Better Move Sprite with Keyboard Example"
 
 # Important constants for this example
@@ -33,7 +33,7 @@ FRICTION = 0.02
 
 class Player(arcade.Sprite):
 
-    def update(self):
+    def update(self, delta_time: float = 1/60):
         self.center_x += self.change_x
         self.center_y += self.change_y
 
@@ -84,7 +84,7 @@ class MyGame(arcade.Window):
         self.down_pressed = False
 
         # Set the background color
-        arcade.background_color = arcade.color.AMAZON
+        self.background_color = arcade.color.AMAZON
 
     def setup(self):
         """ Set up the game and initialize the variables. """
@@ -93,19 +93,23 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
 
         # Set up the player
-        self.player_sprite = Player(":resources:images/animated_characters/female_person/femalePerson_idle.png",
-                                    scale=SPRITE_SCALING)
+        self.player_sprite = Player(
+            ":resources:images/animated_characters/female_person/femalePerson_idle.png",
+            scale=SPRITE_SCALING,
+        )
         self.player_sprite.position = self.width / 2, self.height / 2
         self.player_list.append(self.player_sprite)
 
         # Create the speed display objects with initial text
         self.x_speed_display = arcade.Text(
             f"X Speed: {self.player_sprite.change_x:6.3f}",
-            10, 50, arcade.color.BLACK)
+            10, 50, arcade.color.BLACK, font_size=15,
+        )
 
         self.y_speed_display = arcade.Text(
             f"Y Speed: {self.player_sprite.change_y:6.3f}",
-            10, 70, arcade.color.BLACK)
+            10, 70, color=arcade.color.BLACK, font_size=15,
+        )
 
     def on_draw(self):
         """
@@ -162,7 +166,7 @@ class MyGame(arcade.Window):
         # Call update to move the sprite
         # IMPORTANT: If using a physics engine, you need to call update
         # on it instead of the sprite list!
-        self.player_list.update()
+        self.player_list.update(delta_time)
 
         # Update the speed displays based on the final speed
         self.x_speed_display.text = f"X Speed: {self.player_sprite.change_x:6.3f}"

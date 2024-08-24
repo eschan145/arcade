@@ -6,8 +6,8 @@ python -m arcade.examples.timer
 """
 import arcade
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Timer Example"
 
 
@@ -21,18 +21,16 @@ class MyGame(arcade.Window):
         self.total_time = 0.0
         self.timer_text = arcade.Text(
             text="00:00:00",
-            start_x=SCREEN_WIDTH // 2,
-            start_y=SCREEN_HEIGHT // 2 - 50,
+            x=SCREEN_WIDTH // 2,
+            y=SCREEN_HEIGHT // 2 - 50,
             color=arcade.color.WHITE,
             font_size=100,
             anchor_x="center",
         )
-
-    def setup(self):
-        """
-        Set up the application.
-        """
         self.background_color = arcade.color.ALABAMA_CRIMSON
+        self.total_time = 0.0
+
+    def reset(self):
         self.total_time = 0.0
 
     def on_draw(self):
@@ -65,7 +63,7 @@ class MyGame(arcade.Window):
 
 def main():
     window = MyGame()
-    window.setup()
+    window.reset()
     arcade.run()
 
 

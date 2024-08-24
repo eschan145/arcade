@@ -1,35 +1,29 @@
 """
-This submodule has functions that control opening, closing, rendering, and otherwise managing windows.
+This submodule has functions that control opening, closing, rendering,
+and otherwise managing windows.
 It also has commands for scheduling pauses and scheduling interval functions.
 """
 
+from __future__ import annotations
+
 import gc
-import time
 import os
+from typing import TYPE_CHECKING, Callable
 
 import pyglet
 
-from typing import (
-    Callable,
-    Optional,
-    cast,
-    Tuple,
-    TYPE_CHECKING
-)
 from arcade.types import RGBA255, Color
 
 if TYPE_CHECKING:
     from arcade import Window
 
 
-_window: Optional["Window"] = None
+_window: Window | None = None
 
 __all__ = [
     "get_display_size",
-    "pause",
     "get_window",
     "set_window",
-    "set_viewport",
     "close_window",
     "run",
     "exit",
@@ -38,37 +32,24 @@ __all__ = [
     "set_background_color",
     "schedule",
     "unschedule",
-    "schedule_once"
+    "schedule_once",
 ]
 
 
-def get_display_size(screen_id: int = 0) -> Tuple[int, int]:
+def get_display_size(screen_id: int = 0) -> tuple[int, int]:
     """
     Return the width and height of a monitor.
 
     The size of the primary monitor is returned by default.
 
-    :param int screen_id: The screen number
-    :return: Tuple containing the width and height of the screen
-    :rtype: tuple
+    Args:
+        screen_id: The screen number
+    Returns:
+        Tuple containing the width and height of the screen
     """
-    display = pyglet.canvas.Display()
+    display = pyglet.display.Display()
     screen = display.get_screens()[screen_id]
     return screen.width, screen.height
-
-
-def pause(seconds: float) -> None:
-    """
-    Pause for the specified number of seconds. This is a convenience function that just calls time.sleep().
-
-    .. Warning::
-
-        This is mostly used for unit tests and is not likely to be
-        a good solution for pausing an application or game.
-
-    :param float seconds: Time interval to pause in seconds.
-    """
-    time.sleep(cast(float, seconds))
 
 
 def get_window() -> "Window":
@@ -79,82 +60,21 @@ def get_window() -> "Window":
     """
     if _window is None:
         raise RuntimeError(
-            (
-                "No window is active. "
-                "It has not been created yet, or it was closed."
-            )
+            ("No window is active. " "It has not been created yet, or it was closed.")
         )
 
     return _window
 
 
-def set_window(window: Optional["Window"]) -> None:
+def set_window(window: Window | None) -> None:
     """
     Set a handle to the current window.
 
-    :param Window window: Handle to the current window.
+    Args:
+        window: Handle to the current window.
     """
     global _window
     _window = window
-
-
-def set_viewport(left: float, right: float, bottom: float, top: float) -> None:
-    """
-    This sets what coordinates the window will cover.
-
-    .. tip:: Beginners will want to use :py:class:`~arcade.Camera`.
-             It provides easy to use support for common tasks
-             such as screen shake and movement to a destination.
-
-    If you are making a game with complex control over the viewport,
-    this function can help.
-
-    By default, the lower left coordinate will be ``(0, 0)``, the top y
-    coordinate will be the height of the window in pixels, and the right x
-    coordinate will be the width of the window in pixels.
-
-    .. warning:: Be careful of fractional or non-multiple values!
-
-        It is recommended to only set the viewport to integer values that
-        line up with the pixels on the screen. Otherwise, tiled pixel art
-        may not line up well during render, creating rectangle artifacts.
-
-    .. note:: :py:meth:`Window.on_resize <arcade.Window.on_resize>`
-              calls ``set_viewport`` by default. If you want to set your
-              own custom viewport during the game, you may need to
-              override the
-              :py:meth:`Window.on_resize <arcade.Window.on_resize>`
-              method.
-
-    .. note:: For more advanced users
-
-        This functions sets the orthogonal projection
-        used by shapes and sprites. It also updates the viewport to match the current
-        screen resolution.
-        ``window.ctx.projection_2d`` (:py:meth:`~arcade.ArcadeContext.projection_2d`)
-        and ``window.ctx.viewport`` (:py:meth:`~arcade.gl.Context.viewport`)
-        can be used to set viewport and projection separately.
-
-    :param Number left: Left-most (smallest) x value.
-    :param Number right: Right-most (largest) x value.
-    :param Number bottom: Bottom (smallest) y value.
-    :param Number top: Top (largest) y value.
-    """
-    window = get_window()
-    # Get the active framebuffer
-    fbo = window.ctx.fbo
-    # If the framebuffer is the default one (aka. window framebuffer)
-    # we can't trust its size and need to get that from the window.
-    # This is because the default framebuffer is only introspected
-    # during context creation and it doesn't update size internally
-    # when the window is resizing.
-    if fbo.is_default:
-        fbo.viewport = 0, 0, window.width, window.height
-    # Otherwise it's an offscreen framebuffer and we can trust the size
-    else:
-        fbo.viewport = 0, 0, *fbo.size
-
-    window.ctx.projection_2d = left, right, bottom, top
 
 
 def close_window() -> None:
@@ -180,20 +100,22 @@ def close_window() -> None:
 def run():
     """
     Run the main loop.
-    After the window has been set up, and the event hooks are in place, this is usually one of the last
-    commands on the main program. This is a blocking function starting pyglet's event loop
-    meaning it will start to dispatch events such as ``on_draw`` and ``on_update``.
-    """
 
+    After the window has been set up, and the event hooks are in place,
+    this is usually one of the last commands on the main program.
+    This is a blocking function starting pyglet's event loop meaning
+    it will start to dispatch events such as ``on_draw`` and ``on_update``.
+    """
     window = get_window()
 
     # Used in some unit test
-    if os.environ.get('ARCADE_TEST'):
-        window.on_update(window._update_rate)
+    if os.environ.get("ARCADE_TEST"):
+        window.on_update(1.0 / 60.0)
         window.on_draw()
     elif window.headless:
         # We are entering headless more an will emulate an event loop
         import time
+
         # Ensure the initial delta time is not 0 to be
         # more in line with how a normal window works.
         delta_time = window._draw_rate
@@ -216,7 +138,8 @@ def run():
             delta_time, last_time = now - last_time, now
     else:
         import sys
-        if sys.platform != 'win32':
+
+        if sys.platform != "win32":
             # For non windows platforms, just do pyglet run
             pyglet.app.run(window._draw_rate)
         else:
@@ -227,15 +150,14 @@ def run():
             import ctypes
             from ctypes import wintypes
 
-            winmm = ctypes.WinDLL('winmm')
+            winmm = ctypes.WinDLL("winmm")
 
             class TIMECAPS(ctypes.Structure):
-                _fields_ = (('wPeriodMin', wintypes.UINT),
-                            ('wPeriodMax', wintypes.UINT))
+                _fields_ = (("wPeriodMin", wintypes.UINT), ("wPeriodMax", wintypes.UINT))
 
             def _check_time_err(err, func, args):
                 if err:
-                    raise WindowsError('%s error %d' % (func.__name__, err))
+                    raise WindowsError("%s error %d" % (func.__name__, err))
                 return args
 
             winmm.timeGetDevCaps.errcheck = _check_time_err
@@ -262,31 +184,55 @@ def exit() -> None:
     pyglet.app.exit()
 
 
-def start_render() -> None:
+def start_render(pixelated=False, blend=True) -> None:
     """
-    Clears the window.
+    Start recording drawing functions into an offscreen buffer.
+    Call :py:func:`arcade.finish_render` to stop recording. The
+    start_render/finish_render calls can only be called once.
 
-    More practical alternatives to this function is
-    :py:meth:`arcade.Window.clear`
-    or :py:meth:`arcade.View.clear`.
+    When running arcade this buffer will be presented to the screen.
+
+    A few configuration options are available in this function.
+
+    Args:
+        pixelated:
+            If True, the buffer will be be pixelated when resized.
+            Otherwise, it will be smooth.
+        blend:
+            If alpha blending
     """
-    get_window().clear()
+    from arcade.start_finish_data import StartFinishRenderData
+
+    window = get_window()
+    if window._start_finish_render_data is not None:
+        raise RuntimeError(
+            (
+                "start_render() can only be called once during the application's lifetime "
+                "and should only be used when calling draw functions at module level in "
+                "a simple script to produce a static image. If you are seeing this error "
+                "you likely intended to call clear() instead."
+            )
+        )
+
+    window._start_finish_render_data = StartFinishRenderData(pixelated=pixelated, blend=blend)
+    window._start_finish_render_data.begin()
 
 
-def finish_render():
+def finish_render() -> None:
     """
-    Swap buffers and displays what has been drawn.
+    Stop recording drawing functions into an offscreen buffer.
+    :py:func:`arcade.start_render` should be called before this function.
 
-    .. Warning::
-
-        If you are extending the :py:class:`~arcade.Window` class, this function
-        should not be called. The event loop will automatically swap the window
-        framebuffer for you after ``on_draw``.
-
+    :py:func:`arcade.run` can be called after this function to present the buffer.
     """
-    get_window().static_display = True
-    get_window().flip_count = 0
-    get_window().flip()
+    window = get_window()
+    if window._start_finish_render_data is None:
+        raise RuntimeError("finish_render() was called without a matching start_render() call.")
+
+    if window._start_finish_render_data.completed:
+        raise RuntimeError("finish_render() was called more than once.")
+
+    window._start_finish_render_data.end()
 
 
 def set_background_color(color: RGBA255) -> None:
@@ -308,7 +254,8 @@ def set_background_color(color: RGBA255) -> None:
         # Specify RGB value directly (red)
         arcade.set_background_color((255, 0, 0))
 
-    :param RGBA255: List of 3 or 4 values in RGB/RGBA format.
+    Args:
+        color: List of 3 or 4 values in RGB/RGBA format.
     """
     get_window().background_color = Color.from_iterable(color)
 
@@ -335,8 +282,11 @@ def schedule(function_pointer: Callable, interval: float):
         arcade.schedule(some_action, 1)
         # Unschedule
 
-    :param Callable function_pointer: Pointer to the function to be called.
-    :param float interval: Interval to call the function (float or integer)
+    Args:
+        function_pointer:
+            Pointer to the function to be called.
+        interval:
+            Interval to call the function (float or integer)
     """
     pyglet.clock.schedule_interval(function_pointer, interval)
 
@@ -353,7 +303,8 @@ def unschedule(function_pointer: Callable):
         arcade.schedule(some_action, 1)
         arcade.unschedule(some_action)
 
-    :param Callable function_pointer: Pointer to the function to be unscheduled.
+    Args:
+        function_pointer: Pointer to the function to be unscheduled.
     """
     pyglet.clock.unschedule(function_pointer)
 
@@ -373,7 +324,10 @@ def schedule_once(function_pointer: Callable, delay: float):
         # Call the function once after 1 second
         arcade.schedule_one(some_action, 1)
 
-    :param Callable function_pointer: Pointer to the function to be called.
-    :param float delay: Delay in seconds
+    Args:
+        function_pointer:
+            Pointer to the function to be called.
+        delay:
+            Delay in seconds
     """
     pyglet.clock.schedule_once(function_pointer, delay)

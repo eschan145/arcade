@@ -12,8 +12,8 @@ python -m arcade.examples.sprite_rotate_around_point
 import arcade
 from arcade.math import rotate_point
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 QUARTER_WIDTH = SCREEN_WIDTH // 4
 HALF_HEIGHT = SCREEN_HEIGHT // 2
 
@@ -33,9 +33,13 @@ class RotatingSprite(arcade.Sprite):
         You could remove the change_angle keyword and/or angle change
         if you know that sprites will always or never change angle.
 
-        :param point: The point that the sprite will rotate about
-        :param degrees: How many degrees to rotate the sprite
-        :param change_angle: Whether the sprite's angle should also be adjusted.
+        Args:
+            point:
+                The point that the sprite will rotate about
+            degrees:
+                How many degrees to rotate the sprite
+            change_angle:
+                Whether the sprite's angle should also be adjusted.
         """
 
         # If change_angle is true, change the sprite's angle

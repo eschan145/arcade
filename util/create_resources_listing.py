@@ -7,20 +7,32 @@ import sys
 from pathlib import Path
 from typing import List
 
+# Ensure we get utility and arcade imports first
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+
 import arcade
-from vfs import Vfs
+from doc_helpers.vfs import Vfs
 
 MODULE_DIR = Path(__file__).parent.resolve()
 ARCADE_ROOT = MODULE_DIR.parent
 RESOURCE_DIR = ARCADE_ROOT / "arcade" / "resources"
 OUT_FILE = ARCADE_ROOT / "doc" / "api_docs" / "resources.rst"
-RESOURCE_URL = "https://github.com/pythonarcade/arcade/blob/development/arcade/{}?raw=true"
+RESOURCE_URL = "https://github.com/pythonarcade/arcade/blob/development/{}?raw=true"
 
 COLUMNS = 3
-skip_extensions = arcade.resources._resource_list_skip_extensions
-
+# Metadata for the resource list: utils\create_resource_list.py
+skip_extensions = [
+    ".glsl",
+    ".md",
+    ".py",
+    ".yml",
+    ".url",
+    ".txt",
+    ".tiled-project",
+    ".ttf",
+    ".pyc",
+]
 
 def skipped_file(file_path: Path):
     """Return True if file should be skipped."""

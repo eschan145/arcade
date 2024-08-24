@@ -11,13 +11,13 @@ python -m arcade.examples.sprite_bullets
 import random
 import arcade
 
-SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_COIN = 0.2
+SPRITE_SCALING_PLAYER = 0.6
+SPRITE_SCALING_COIN = 0.4
 SPRITE_SCALING_LASER = 0.8
 COIN_COUNT = 50
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprites and Bullets Example"
 
 BULLET_SPEED = 5
@@ -74,7 +74,10 @@ class MyGame(arcade.Window):
 
             # Create the coin instance
             # Coin image from kenney.nl
-            coin = arcade.Sprite(":resources:images/items/coinGold.png", scale=SPRITE_SCALING_COIN)
+            coin = arcade.Sprite(
+                ":resources:images/items/coinGold.png",
+                scale=SPRITE_SCALING_COIN,
+            )
 
             # Position the coin
             coin.center_x = random.randrange(SCREEN_WIDTH)
@@ -115,7 +118,10 @@ class MyGame(arcade.Window):
         # Gunshot sound
         arcade.play_sound(self.gun_sound)
         # Create a bullet
-        bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", scale=SPRITE_SCALING_LASER)
+        bullet = arcade.Sprite(
+            ":resources:images/space_shooter/laserBlue01.png",
+            scale=SPRITE_SCALING_LASER,
+        )
 
         # The image points to the right, and we want it to point up. So
         # rotate it.

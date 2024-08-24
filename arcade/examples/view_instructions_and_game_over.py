@@ -21,9 +21,9 @@ python -m arcade.examples.view_instructions_and_game_over
 import arcade
 import random
 
-WIDTH = 800
-HEIGHT = 600
-SPRITE_SCALING = 0.5
+WIDTH = 1280
+HEIGHT = 720
+SPRITE_SCALING = 1.0
 
 
 class MenuView(arcade.View):
@@ -44,7 +44,7 @@ class MenuView(arcade.View):
 
 class InstructionView(arcade.View):
     def on_show_view(self):
-        self.window.background = arcade.color.ORANGE_PEEL
+        self.window.background_color = arcade.color.ORANGE_PEEL
 
     def on_draw(self):
         self.clear()
@@ -70,8 +70,10 @@ class GameView(arcade.View):
 
         # Set up the player
         self.score = 0
-        self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
-                                           scale=SPRITE_SCALING)
+        self.player_sprite = arcade.Sprite(
+            ":resources:images/animated_characters/female_person/femalePerson_idle.png",
+            scale=SPRITE_SCALING,
+        )
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
@@ -79,7 +81,10 @@ class GameView(arcade.View):
         for i in range(5):
 
             # Create the coin instance
-            coin = arcade.Sprite(":resources:images/items/coinGold.png", scale=SPRITE_SCALING / 3)
+            coin = arcade.Sprite(
+                ":resources:images/items/coinGold.png",
+                scale=SPRITE_SCALING / 3,
+            )
 
             # Position the coin
             coin.center_x = random.randrange(WIDTH)
@@ -153,8 +158,22 @@ class GameOverView(arcade.View):
         """
         Draw "Game over" across the screen.
         """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
+        arcade.draw_text(
+            "Game Over",
+            x=WIDTH / 2,
+            y=400,
+            color=arcade.color.WHITE,
+            font_size=54,
+            anchor_x="center"
+        )
+        arcade.draw_text(
+            "Click to restart",
+            x=WIDTH / 2,
+            y=300,
+            color=arcade.color.WHITE,
+            font_size=24,
+            anchor_x="center",
+        )
 
         time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
         arcade.draw_text(f"Time taken: {time_taken_formatted}",

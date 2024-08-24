@@ -3,24 +3,29 @@ The Arcade Library
 
 A Python simple, easy to use module for creating 2D games.
 """
-# flake8: noqa: E402
 
+from __future__ import annotations
+
+# flake8: noqa: E402
 # Error out if we import Arcade with an incompatible version of Python.
 import sys
 import os
-from typing import Optional
+from typing import Final
 
 from pathlib import Path
 
-if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 7):
-    sys.exit("The Arcade Library requires Python 3.7 or higher.")
+if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 9):
+    sys.exit("The Arcade Library requires Python 3.9 or higher.")
 
 
-def configure_logging(level: Optional[int] = None):
+def configure_logging(level: int | None = None):
     """Set up basic logging.
-    :param int level: The log level. Defaults to DEBUG.
+
+    Args:
+        level: The log level. Defaults to DEBUG.
     """
     import logging
+
     level = level or logging.DEBUG
     LOG = logging.getLogger(__name__)
     # Do not add a new handler if we already have one
@@ -29,8 +34,11 @@ def configure_logging(level: Optional[int] = None):
         LOG.setLevel(level)
         ch = logging.StreamHandler()
         ch.setLevel(level)
-        ch.setFormatter(logging.Formatter('%(relativeCreated)s %(name)s %(levelname)s - %(message)s'))
+        ch.setFormatter(
+            logging.Formatter("%(relativeCreated)s %(name)s %(levelname)s - %(message)s")
+        )
         LOG.addHandler(ch)
+
 
 # The following is used to load ffmpeg libraries.
 # Currently Arcade is only shipping binaries for Mac OS
@@ -49,24 +57,25 @@ if sys.platform == "darwin" or sys.platform.startswith("linux"):
 else:
     os.environ["PATH"] += str(lib_location)
 
-# noinspection PyPep8
 import pyglet
 
+
 # Env variable shortcut for headless mode
-if os.environ.get('ARCADE_HEADLESS'):
-    pyglet.options["headless"] = True
+headless: Final[bool] = bool(os.environ.get("ARCADE_HEADLESS"))
+if headless:
+    pyglet.options.headless = headless  # type: ignore # pending https://github.com/pyglet/pyglet/issues/1164
+
 
 from arcade import utils
 
 # Disable shadow window on macs and in headless mode.
-if sys.platform == "darwin" or os.environ.get('ARCADE_HEADLESS') or utils.is_raspberry_pi():
-    pyglet.options['shadow_window'] = False
+if sys.platform == "darwin" or os.environ.get("ARCADE_HEADLESS") or utils.is_raspberry_pi():
+    pyglet.options.shadow_window = False  # type: ignore # pending https://github.com/pyglet/pyglet/issues/1164
 
 # Use the old gdi fonts on windows until directwrite is fast/stable
-# pyglet.options['win32_gdi_font'] = True
+# pyglet.options.win32_gdi_font = True
 
 # Imports from modules that don't do anything circular
-from .drawing_support import get_points_for_thick_line
 
 # Complex imports with potential circularity
 from .window_commands import close_window
@@ -74,17 +83,14 @@ from .window_commands import exit
 from .window_commands import finish_render
 from .window_commands import get_display_size
 from .window_commands import get_window
-from .window_commands import pause
 from .window_commands import schedule
 from .window_commands import run
 from .window_commands import set_background_color
-from .window_commands import set_viewport
 from .window_commands import set_window
 from .window_commands import start_render
 from .window_commands import unschedule
 from .window_commands import schedule_once
 
-from .camera import SimpleCamera, Camera
 from .sections import Section, SectionManager
 
 from .application import MOUSE_BUTTON_LEFT
@@ -97,50 +103,49 @@ from .application import get_screens
 from .application import open_window
 
 from .texture import Texture
+from .texture import TextureCacheManager
+from .texture import SpriteSheet
 from .texture import load_spritesheet
 from .texture import load_texture
-from .texture import load_texture_pair
-from .texture import load_textures
+from .texture import load_image
 from .texture import make_circle_texture
 from .texture import make_soft_circle_texture
 from .texture import make_soft_square_texture
-from .texture import cleanup_texture_cache
 from .texture import get_default_image
 from .texture import get_default_texture
 
-from .draw_commands import draw_arc_filled
-from .draw_commands import draw_arc_outline
-from .draw_commands import draw_circle_filled
-from .draw_commands import draw_circle_outline
-from .draw_commands import draw_ellipse_filled
-from .draw_commands import draw_ellipse_outline
-from .draw_commands import draw_line
-from .draw_commands import draw_line_strip
-from .draw_commands import draw_lines
-from .draw_commands import draw_lrtb_rectangle_filled
-from .draw_commands import draw_lrbt_rectangle_filled
-from .draw_commands import draw_lrtb_rectangle_outline
-from .draw_commands import draw_lrbt_rectangle_outline
-from .draw_commands import draw_lrwh_rectangle_textured
-from .draw_commands import draw_parabola_filled
-from .draw_commands import draw_parabola_outline
-from .draw_commands import draw_point
-from .draw_commands import draw_points
-from .draw_commands import draw_polygon_filled
-from .draw_commands import draw_polygon_outline
-from .draw_commands import draw_rectangle_filled
-from .draw_commands import draw_rectangle_outline
-from .draw_commands import draw_scaled_texture_rectangle
-from .draw_commands import draw_texture_rectangle
-from .draw_commands import draw_triangle_filled
-from .draw_commands import draw_triangle_outline
-from .draw_commands import draw_xywh_rectangle_filled
-from .draw_commands import draw_xywh_rectangle_outline
-from .draw_commands import get_image
-from .draw_commands import get_pixel
+from .draw import get_points_for_thick_line
+from .draw import draw_arc_filled
+from .draw import draw_arc_outline
+from .draw import draw_circle_filled
+from .draw import draw_circle_outline
+from .draw import draw_ellipse_filled
+from .draw import draw_ellipse_outline
+from .draw import draw_line
+from .draw import draw_line_strip
+from .draw import draw_lines
+from .draw import draw_lrbt_rectangle_filled
+from .draw import draw_lrbt_rectangle_outline
+from .draw import draw_parabola_filled
+from .draw import draw_parabola_outline
+from .draw import draw_point
+from .draw import draw_points
+from .draw import draw_polygon_filled
+from .draw import draw_polygon_outline
+from .draw import draw_rect_filled
+from .draw import draw_rect_outline
+from .draw import draw_texture_rect
+from .draw import draw_sprite
+from .draw import draw_sprite_rect
+from .draw import draw_triangle_filled
+from .draw import draw_triangle_outline
+from .draw import draw_lbwh_rectangle_filled
+from .draw import draw_lbwh_rectangle_outline
+from .screenshot import get_image
+from .screenshot import get_pixel
 
 # We don't have joysticks game controllers in headless mode
-if not pyglet.options["headless"]:
+if not headless:  # type: ignore
     from .joysticks import get_game_controllers
     from .joysticks import get_joysticks
     from .controller import ControllerManager
@@ -155,15 +160,17 @@ from .sprite import FACE_DOWN
 from .sprite import FACE_LEFT
 from .sprite import FACE_RIGHT
 from .sprite import FACE_UP
-from .sprite import AnimatedTimeBasedSprite
+from .sprite import TextureAnimationSprite
 from .sprite import load_animated_gif
 from .sprite import AnimatedWalkingSprite
-from .sprite import AnimationKeyframe
+from .sprite import TextureAnimation
+from .sprite import TextureKeyframe
 from .sprite import PyMunk
 from .sprite import PymunkMixin
 from .sprite import SpriteType
 from .sprite import Sprite
 from .sprite import BasicSprite
+
 # from .sprite import SimpleSprite
 from .sprite import SpriteCircle
 from .sprite import SpriteSolidColor
@@ -181,6 +188,7 @@ from .sprite_list import get_sprites_in_rect
 from .sprite_list import SpatialHash
 
 from .scene import Scene
+from .scene import SceneKeyError
 
 from .physics_engines import PhysicsEnginePlatformer
 from .physics_engines import PhysicsEngineSimple
@@ -201,9 +209,7 @@ from .paths import astar_calculate_path
 
 from .context import ArcadeContext
 
-from .texture_atlas import TextureAtlas
-from .texture_atlas import load_atlas
-from .texture_atlas import save_atlas
+from .texture_atlas import DefaultTextureAtlas
 
 from .perf_info import enable_timings
 from .perf_info import print_timings
@@ -215,9 +221,15 @@ from .perf_info import disable_timings
 
 from .perf_graph import PerfGraph
 
+from .camera import Camera2D
+
+from .types.rect import Rect, LRBT, LBWH, XYWH
+
 # Module imports
 from arcade import color as color
 from arcade import csscolor as csscolor
+from arcade import uicolor as uicolor
+from arcade import camera as camera
 from arcade import key as key
 from arcade import resources as resources
 from arcade import types as types
@@ -225,6 +237,10 @@ from arcade import math as math
 from arcade import shape_list as shape_list
 from arcade import hitbox as hitbox
 from arcade import experimental as experimental
+from arcade.types import rect
+
+# For ease of access for beginners
+from pyglet.math import Vec2, Vec3, Vec4
 
 from .text import (
     draw_text,
@@ -234,169 +250,164 @@ from .text import (
 )
 
 __all__ = [
-    'AStarBarrierList',
-    'AnimatedTimeBasedSprite',
-    'AnimatedWalkingSprite',
-    'AnimationKeyframe',
-    'ArcadeContext',
-    'Camera',
-    'SimpleCamera',
-    'ControllerManager',
-    'FACE_DOWN',
-    'FACE_LEFT',
-    'FACE_RIGHT',
-    'FACE_UP',
-    'MOUSE_BUTTON_LEFT',
-    'MOUSE_BUTTON_MIDDLE',
-    'MOUSE_BUTTON_RIGHT',
-    'NoOpenGLException',
-    'PerfGraph',
-    'PhysicsEnginePlatformer',
-    'PhysicsEngineSimple',
-    'PyMunk',
-    'PymunkException',
-    'PymunkPhysicsEngine',
-    'PymunkPhysicsObject',
-    'Section',
-    'SectionManager',
-    'Scene',
-    'Sound',
-    'BasicSprite',
-    'Sprite',
-    'SpriteType',
-    'PymunkMixin',
-    'SpriteCircle',
-    'SpriteList',
-    'SpriteSolidColor',
-    'Text',
-    'Texture',
-    'TextureAtlas',
-    'load_atlas',
-    'save_atlas',
-    'TileMap',
-    'VERSION',
-    'View',
-    'Window',
-    'astar_calculate_path',
-    'check_for_collision',
-    'check_for_collision_with_list',
-    'check_for_collision_with_lists',
-    'close_window',
-    'disable_timings',
-    'draw_arc_filled',
-    'draw_arc_outline',
-    'draw_circle_filled',
-    'draw_circle_outline',
-    'draw_ellipse_filled',
-    'draw_ellipse_outline',
-    'draw_line',
-    'draw_line_strip',
-    'draw_lines',
-    'draw_lrtb_rectangle_filled',
-    'draw_lrbt_rectangle_filled',
-    'draw_lrtb_rectangle_outline',
-    'draw_lrbt_rectangle_outline',
-    'draw_lrwh_rectangle_textured',
-    'draw_parabola_filled',
-    'draw_parabola_outline',
-    'draw_point',
-    'draw_points',
-    'draw_polygon_filled',
-    'draw_polygon_outline',
-    'draw_rectangle_filled',
-    'draw_rectangle_outline',
-    'draw_scaled_texture_rectangle',
-    'draw_text',
-    'draw_texture_rectangle',
-    'draw_triangle_filled',
-    'draw_triangle_outline',
-    'draw_xywh_rectangle_filled',
-    'draw_xywh_rectangle_outline',
-    'enable_timings',
-    'exit',
-    'finish_render',
-    'get_closest_sprite',
-    'get_display_size',
-    'get_distance_between_sprites',
-    'get_sprites_in_rect',
-    'get_controllers',
-    'get_game_controllers',
-    'get_image',
-    'get_joysticks',
-    'get_pixel',
-    'get_points_for_thick_line',
-    'get_screens',
-    'get_sprites_at_exact_point',
-    'get_sprites_at_point',
-    'SpatialHash',
-    'get_timings',
-    'create_text_sprite',
-    'clear_timings',
-    'get_window',
-    'get_fps',
-    'has_line_of_sight',
-    'load_animated_gif',
-    'load_font',
-    'load_sound',
-    'load_spritesheet',
-    'load_texture',
-    'load_texture_pair',
-    'load_textures',
-    'make_circle_texture',
-    'make_soft_circle_texture',
-    'make_soft_square_texture',
-    'open_window',
-    'pause',
-    'print_timings',
-    'play_sound',
-    'read_tmx',
-    'load_tilemap',
-    'run',
-    'schedule',
-    'set_background_color',
-    'set_viewport',
-    'set_window',
-    'start_render',
-    'stop_sound',
-    'timings_enabled',
-    'unschedule',
-    'schedule_once',
-    'cleanup_texture_cache',
-    'get_default_texture',
-    'get_default_image',
-    'hitbox',
-    'experimental',
-    'color',
-    'csscolor',
-    'key',
-    'resources',
-    'types',
-    'math',
-    'shape_list',
+    "AStarBarrierList",
+    "AnimatedWalkingSprite",
+    "TextureAnimationSprite",
+    "TextureAnimation",
+    "TextureKeyframe",
+    "ArcadeContext",
+    "ControllerManager",
+    "FACE_DOWN",
+    "FACE_LEFT",
+    "FACE_RIGHT",
+    "FACE_UP",
+    "MOUSE_BUTTON_LEFT",
+    "MOUSE_BUTTON_MIDDLE",
+    "MOUSE_BUTTON_RIGHT",
+    "NoOpenGLException",
+    "PerfGraph",
+    "PhysicsEnginePlatformer",
+    "PhysicsEngineSimple",
+    "PyMunk",
+    "PymunkException",
+    "PymunkPhysicsEngine",
+    "PymunkPhysicsObject",
+    "Rect",
+    "LBWH",
+    "LRBT",
+    "XYWH",
+    "Section",
+    "SectionManager",
+    "Scene",
+    "SceneKeyError",
+    "Sound",
+    "BasicSprite",
+    "Sprite",
+    "SpriteType",
+    "PymunkMixin",
+    "SpriteCircle",
+    "SpriteList",
+    "SpriteSolidColor",
+    "Text",
+    "Texture",
+    "TextureCacheManager",
+    "SpriteSheet",
+    "DefaultTextureAtlas",
+    "TileMap",
+    "VERSION",
+    "Vec2",
+    "Vec3",
+    "Vec4",
+    "View",
+    "Window",
+    "astar_calculate_path",
+    "check_for_collision",
+    "check_for_collision_with_list",
+    "check_for_collision_with_lists",
+    "close_window",
+    "disable_timings",
+    "draw_arc_filled",
+    "draw_arc_outline",
+    "draw_circle_filled",
+    "draw_circle_outline",
+    "draw_ellipse_filled",
+    "draw_ellipse_outline",
+    "draw_line",
+    "draw_line_strip",
+    "draw_lines",
+    "draw_lrbt_rectangle_filled",
+    "draw_lrbt_rectangle_filled",
+    "draw_lrbt_rectangle_outline",
+    "draw_lrbt_rectangle_outline",
+    "draw_parabola_filled",
+    "draw_parabola_outline",
+    "draw_point",
+    "draw_points",
+    "draw_polygon_filled",
+    "draw_polygon_outline",
+    "draw_rect_filled",
+    "draw_rect_outline",
+    "draw_text",
+    "draw_texture_rect",
+    "draw_sprite",
+    "draw_sprite_rect",
+    "draw_triangle_filled",
+    "draw_triangle_outline",
+    "draw_lbwh_rectangle_filled",
+    "draw_lbwh_rectangle_outline",
+    "enable_timings",
+    "exit",
+    "finish_render",
+    "get_closest_sprite",
+    "get_display_size",
+    "get_distance_between_sprites",
+    "get_sprites_in_rect",
+    "get_controllers",
+    "get_game_controllers",
+    "get_image",
+    "get_joysticks",
+    "get_pixel",
+    "get_points_for_thick_line",
+    "get_screens",
+    "get_sprites_at_exact_point",
+    "get_sprites_at_point",
+    "SpatialHash",
+    "get_timings",
+    "create_text_sprite",
+    "clear_timings",
+    "get_window",
+    "get_fps",
+    "has_line_of_sight",
+    "load_animated_gif",
+    "load_font",
+    "load_sound",
+    "load_spritesheet",
+    "load_texture",
+    "load_image",
+    "make_circle_texture",
+    "make_soft_circle_texture",
+    "make_soft_square_texture",
+    "open_window",
+    "print_timings",
+    "play_sound",
+    "read_tmx",
+    "load_tilemap",
+    "run",
+    "schedule",
+    "set_background_color",
+    "set_window",
+    "start_render",
+    "stop_sound",
+    "timings_enabled",
+    "unschedule",
+    "schedule_once",
+    "get_default_texture",
+    "get_default_image",
+    "hitbox",
+    "experimental",
+    "rect",
+    "color",
+    "csscolor",
+    "uicolor",
+    "key",
+    "resources",
+    "types",
+    "math",
+    "shape_list",
+    "Camera2D",
 ]
 
 __version__ = VERSION
 
 # Piggyback on pyglet's doc run detection
-if not getattr(sys, 'is_pyglet_doc_run', False):
-    # Auto load fonts
-    load_font(":system:fonts/ttf/Kenney_Blocks.ttf")
-    load_font(":system:fonts/ttf/Kenney_Future.ttf")
-    load_font(":system:fonts/ttf/Kenney_Future_Narrow.ttf")
-    load_font(":system:fonts/ttf/Kenney_High.ttf")
-    load_font(":system:fonts/ttf/Kenney_High_Square.ttf")
-    load_font(":system:fonts/ttf/Kenney_Mini.ttf")
-    load_font(":system:fonts/ttf/Kenney_Mini_Square.ttf")
-    load_font(":system:fonts/ttf/Kenney_Pixel.ttf")
-    load_font(":system:fonts/ttf/Kenney_Pixel_Square.ttf")
-    load_font(":system:fonts/ttf/Kenney_Rocket.ttf")
-    load_font(":system:fonts/ttf/Kenney_Rocket_Square.ttf")
-
+if not getattr(sys, "is_pyglet_doc_run", False):
     # Load additional game controller mappings to Pyglet
-    if not pyglet.options['headless']:
+    if not headless:
         try:
             import pyglet.input.controller
+
             mappings_file = resources.resolve(":system:gamecontrollerdb.txt")
-            pyglet.input.controller.add_mappings_from_file(mappings_file)
+            # TODO: remove string conversion once fixed upstream
+            pyglet.input.controller.add_mappings_from_file(str(mappings_file))
         except AssertionError:
             pass

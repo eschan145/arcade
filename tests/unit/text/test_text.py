@@ -11,7 +11,7 @@ def test_text(window):
     SCREEN_HEIGHT = window.height
     LINE_HEIGHT = 20
 
-    arcade.start_render()
+    window.clear()
     current_x = 20
 
     # First line
@@ -83,7 +83,7 @@ def test_text_instances(window):
     SCREEN_HEIGHT = window.height
     LINE_HEIGHT = 20
 
-    arcade.start_render()
+    window.clear()
     current_x = 20
 
     text_list: List[arcade.Text] = []
@@ -152,7 +152,3 @@ def test_text_instances(window):
         text.draw()
 
     window.flip()
-
-
-# def test_create_text_sprite(window):
-#     pass

@@ -4,6 +4,7 @@ Rendering to texture with a compute shader
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.compute_texture
 """
+
 import arcade
 from arcade.gl import geometry
 
@@ -37,7 +38,9 @@ void main() {
 
     // Wave covering the screen diagonally using the global invocation value.
     // This would pretty much be the pixel location
-    float global = sin(float(gl_GlobalInvocationID.x + gl_GlobalInvocationID.y) * 0.01 + time) / 2.0 + 0.5;
+    float global = sin(
+        float(gl_GlobalInvocationID.x + gl_GlobalInvocationID.y) * 0.01 + time
+    ) / 2.0 + 0.5;
     imageStore(destTex, texelPos, vec4(local, global, 0.0, 1.0));
 }
 """
@@ -48,7 +51,6 @@ class App(arcade.Window):
     def __init__(self, *args, **kwargs):
         # We need to specify OpenGL 4.3 when using Compute Shaders
         super().__init__(*SIZE, "Compute Shader", gl_version=(4, 3))
-        self.time = 0
         self.cs = self.ctx.compute_shader(source=COMPUTE_SHADER)
         # In gles the texture needs to be immutable (immutable storage, not contents)
         self.texture = self.ctx.texture(SIZE, components=4, immutable=True)
@@ -106,7 +108,6 @@ class App(arcade.Window):
         self.quad.render(self.program)
 
     def on_update(self, delta_time: float):
-        self.time += delta_time
         self.cs["time"] = self.time * 10
 
 

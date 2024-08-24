@@ -1,6 +1,9 @@
-from typing import Tuple
+from __future__ import annotations
+
 from PIL.Image import Image
-from arcade.types import Point, PointList
+
+from arcade.types import Point, Point2List
+
 from .base import HitBoxAlgorithm
 
 
@@ -9,16 +12,14 @@ class SimpleHitBoxAlgorithm(HitBoxAlgorithm):
     Simple hit box algorithm. This algorithm attempts to trim out transparent pixels
     from an image to create a hit box.
     """
-    name = "simple"
 
-    def calculate(self, image: Image, **kwargs) -> PointList:
+    def calculate(self, image: Image, **kwargs) -> Point2List:
         """
         Given an RGBA image, this returns points that make up a hit box around it. Attempts
         to trim out transparent pixels.
 
-        :param Image image:
-
-        :Returns: List of points
+        Args:
+            image: Image get hit box from.
         """
         if image.mode != "RGBA":
             raise ValueError("Image mode is not RGBA. image.convert('RGBA') is needed.")
@@ -28,13 +29,15 @@ class SimpleHitBoxAlgorithm(HitBoxAlgorithm):
         bbox = image.getbbox()
         # If there is no bounding box the image is empty
         if bbox is None:
-            return tuple()
+            return self.create_bounding_box(image)
 
         left_border, top_border, right_border, bottom_border = bbox
         right_border -= 1
         bottom_border -= 1
 
-        def _check_corner_offset(start_x: int, start_y: int, x_direction: int, y_direction: int) -> int:
+        def _check_corner_offset(
+            start_x: int, start_y: int, x_direction: int, y_direction: int
+        ) -> int:
             bad = False
             offset = 0
             while not bad:
@@ -54,7 +57,7 @@ class SimpleHitBoxAlgorithm(HitBoxAlgorithm):
             # print(f"offset: {offset}")
             return offset
 
-        def _r(point: Tuple[float, float], height: int, width: int) -> Point:
+        def _r(point: tuple[float, float], height: int, width: int) -> Point:
             return point[0] - width / 2, (height - point[1]) - height / 2
 
         top_left_corner_offset = _check_corner_offset(left_border, top_border, 1, 1)

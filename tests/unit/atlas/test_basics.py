@@ -1,13 +1,13 @@
-import PIL
+import PIL.Image
 import pytest
 from pyglet.image.atlas import AllocatorException
 import arcade
-from arcade import TextureAtlas, load_texture
+from arcade import DefaultTextureAtlas, load_texture
 from arcade.gl import Texture2D, Framebuffer
 
 
 def test_create(ctx, common):
-    atlas = TextureAtlas((100, 200))
+    atlas = DefaultTextureAtlas((100, 200))
     assert atlas.width == 100
     assert atlas.height == 200
     assert atlas.size == (100, 200)
@@ -19,59 +19,38 @@ def test_create(ctx, common):
     assert isinstance(atlas.image_uv_texture, Texture2D)
     assert isinstance(atlas.texture_uv_texture, Texture2D)
     assert isinstance(atlas.fbo, Framebuffer)
-    assert atlas._image_uv_data_changed is True
-    assert atlas._texture_uv_data_changed is True
-    common.check_internals(atlas, num_images=0, num_textures=0)
-
-
-def test_create_from_texture_sequence(ctx):
-    tex_1 = arcade.load_texture(":resources:images/topdown_tanks/tileGrass1.png")
-    tex_2 = arcade.load_texture(":resources:images/topdown_tanks/tileSand2.png")
-    tex_3 = arcade.load_texture(":resources:images/topdown_tanks/tileGrass_roadCrossing.png")
-    atlas = arcade.TextureAtlas.create_from_texture_sequence([tex_1, tex_2, tex_3])
-    assert atlas.size == (192, 192)
+    common.check_internals(atlas, images=0, textures=0, unique_textures=0)
 
 
 def test_add(ctx, common):
     """Test adding textures to atlas"""
     tex_a = load_texture(":resources:onscreen_controls/shaded_dark/a.png")
     tex_b = load_texture(":resources:onscreen_controls/shaded_dark/b.png")
-    atlas = TextureAtlas((200, 200), border=1)
+    atlas = DefaultTextureAtlas((200, 200), border=1)
     slot_a, region_a = atlas.add(tex_a)
     slot_b, region_b = atlas.add(tex_b)
     assert slot_a == 0
     assert slot_b == 1
-    common.check_internals(atlas, num_images=2, num_textures=2)
+    common.check_internals(atlas, images=2, textures=2, unique_textures=2)
     # Add existing textures
     assert slot_a == atlas.add(tex_a)[0]
     assert slot_b == atlas.add(tex_b)[0]
-    common.check_internals(atlas, num_images=2, num_textures=2)
+    common.check_internals(atlas, images=2, textures=2, unique_textures=2)
     atlas.use_uv_texture()
 
 
 def test_remove(ctx, common):
-    """Remove textures from atlas"""
-    tex_a = load_texture(":resources:onscreen_controls/shaded_dark/a.png")
-    tex_b = load_texture(":resources:onscreen_controls/shaded_dark/b.png")
-    atlas = TextureAtlas((200, 200), border=1)
-    slot_a, region_a = atlas.add(tex_a)
-    slot_b, region_b = atlas.add(tex_b)
-    common.check_internals(atlas, num_images=2, num_textures=2)
-    atlas.remove(tex_a)
-    common.check_internals(atlas, num_images=1, num_textures=1)
-    atlas.rebuild()
-    common.check_internals(atlas, num_images=1, num_textures=1)
-    atlas.remove(tex_b)
-    common.check_internals(atlas, num_images=0, num_textures=0)
-    atlas.rebuild()
-    common.check_internals(atlas,  num_images=0, num_textures=0)
+    """Default atlas doesn't support remove"""
+    atlas = DefaultTextureAtlas((200, 200))
+    with pytest.raises(RuntimeError):
+        atlas.remove("object")
 
 
 def test_add_overflow(ctx):
     """Ensure AllocatorException is raised when atlas is full"""
     tex_a = load_texture(":resources:onscreen_controls/shaded_dark/a.png")
     tex_b = load_texture(":resources:onscreen_controls/shaded_dark/b.png")
-    atlas = TextureAtlas((100, 100), auto_resize=False)
+    atlas = DefaultTextureAtlas((100, 100), auto_resize=False)
     slot_a, region = atlas.add(tex_a)
     assert slot_a == 0
     # Atlas should be full at this point
@@ -79,40 +58,28 @@ def test_add_overflow(ctx):
         atlas.add(tex_b)
 
 
-def test_clear(ctx, common):
-    """Clear the atlas"""
-    atlas = TextureAtlas((200, 200))
-    tex_a = load_texture(":resources:onscreen_controls/shaded_dark/a.png")
-    tex_b = load_texture(":resources:onscreen_controls/shaded_dark/b.png")
-    atlas.add(tex_a)
-    atlas.add(tex_b)
-    common.check_internals(atlas, num_images=2, num_textures=2)
-    atlas.clear()
-    common.check_internals(atlas, num_images=0, num_textures=0)
-
-
 def test_max_size(ctx):
     """The maximum atlas size should at least be 8192 (2^13)"""
-    atlas = TextureAtlas((100, 100))
+    atlas = DefaultTextureAtlas((100, 100))
     assert atlas.max_size[0] >= 4096
     assert atlas.max_size[1] >= 4096
 
     # Resize the atlas to something any hardware wouldn't support
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         atlas.resize((100_000, 100_000))
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         atlas.resize((100, 100_000))
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         atlas.resize((100_000, 100))
 
     # Create an unreasonable sized atlas
-    with pytest.raises(ValueError):
-        TextureAtlas((100_000, 100_000))
+    with pytest.raises(Exception):
+        DefaultTextureAtlas((100_000, 100_000))
 
 
 def test_to_image(ctx):
     """Convert atlas to image"""
-    atlas = TextureAtlas((100, 100))
+    atlas = DefaultTextureAtlas((100, 100))
     img = atlas.to_image()
     assert img.mode == "RGBA"
     assert img.size == (100, 100)
@@ -127,7 +94,7 @@ def test_to_image(ctx):
 def test_update_texture_image(ctx):
     """Test partial image updates"""
     # Create the smallest atlas possible without border
-    atlas = TextureAtlas((64 * 3, 64), border=0)
+    atlas = DefaultTextureAtlas((64 * 3, 64), border=0)
     # Load 3 x 64 x 64 images
     tex_1 = arcade.load_texture(":resources:images/topdown_tanks/tileGrass1.png")
     tex_2 = arcade.load_texture(":resources:images/topdown_tanks/tileSand2.png")
@@ -153,19 +120,17 @@ def test_update_texture_image(ctx):
 
 def test_uv_buffers_after_change(ctx):
     capacity = 2
-    atlas = TextureAtlas((100, 100), capacity=capacity)
+    atlas = DefaultTextureAtlas((100, 100), capacity=capacity)
 
     def buf_check(atlas):
         # Check that the byte data of the uv data and texture is the same
-        assert len(atlas._image_uv_data) == 4096 * capacity * 8
-        assert len(atlas._image_uv_data.tobytes()) == len(atlas._image_uv_texture.read())
-        assert len(atlas._texture_uv_data) == 4096 * capacity * 8
-        assert len(atlas._texture_uv_data.tobytes()) == len(atlas._texture_uv_texture.read())
+        assert len(atlas._image_uvs._data) == 4096 * capacity * 8
+        assert len(atlas._image_uvs._data.tobytes()) == len(atlas._image_uvs.texture.read())
+        assert len(atlas._texture_uvs._data) == 4096 * capacity * 8
+        assert len(atlas._texture_uvs._data.tobytes()) == len(atlas._texture_uvs.texture.read())
 
     buf_check(atlas)
     atlas.resize((200, 200))
     buf_check(atlas)
     atlas.rebuild()
-    buf_check(atlas)
-    atlas.clear()
     buf_check(atlas)

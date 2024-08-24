@@ -6,14 +6,15 @@ Use a fireworks display to demonstrate "real-world" uses of Emitters and Particl
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.particle_fireworks
 """
+from __future__ import annotations
 import random
+
 import pyglet
 from pyglet.math import Vec2
 
 import arcade
-from arcade.types import Point
+from arcade.types import Point, PathOrTexture, LBWH
 from arcade.math import rand_in_rect, clamp, lerp, rand_in_circle, rand_on_circle
-from arcade.types import PathOrTexture
 from arcade.particles import (
     Emitter,
     LifetimeParticle,
@@ -22,7 +23,6 @@ from arcade.particles import (
     EmitMaintainCount,
     EmitBurst,
 )
-
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -66,10 +66,8 @@ def make_spinner():
         center_xy=(SCREEN_WIDTH / 2, SPINNER_HEIGHT - 5),
         emit_controller=EmitterIntervalWithTime(0.025, 2.0),
         particle_factory=lambda emitter: FadeParticle(
-            filename_or_texture=random.choice(STAR_TEXTURES),
-            change_xy=(0, 6.0),
-            lifetime=0.2
-        )
+            filename_or_texture=random.choice(STAR_TEXTURES), change_xy=(0, 6.0), lifetime=0.2
+        ),
     )
     spinner.change_angle = 16.28
     return spinner
@@ -87,9 +85,9 @@ def make_rocket(emit_done_cb):
             lifetime=random.uniform(1.0, 1.5),
             start_alpha=100,
             end_alpha=0,
-            mutation_callback=rocket_smoke_mutator
+            mutation_callback=rocket_smoke_mutator,
         ),
-        emit_done_cb=emit_done_cb
+        emit_done_cb=emit_done_cb,
     )
     rocket.change_x = random.uniform(-1.0, 1.0)
     rocket.change_y = random.uniform(5.0, 7.25)
@@ -104,21 +102,24 @@ def make_flash(prev_emitter):
         particle_factory=lambda emitter: FadeParticle(
             filename_or_texture=FLASH_TEXTURE,
             change_xy=rand_in_circle((0.0, 0.0), 3.5),
-            lifetime=0.15
-        )
+            lifetime=0.15,
+        ),
     )
 
 
 def make_puff(prev_emitter):
-    """Return emitter that generates the subtle smoke cloud left after a firework shell explodes"""
+    """
+    Return emitter that generates the subtle smoke cloud
+    left after a firework shell explodes.
+    """
     return Emitter(
         center_xy=prev_emitter.get_pos(),
         emit_controller=EmitBurst(4),
         particle_factory=lambda emitter: FadeParticle(
             filename_or_texture=PUFF_TEXTURE,
             change_xy=Vec2(*rand_in_circle((0.0, 0.0), 0.4)) + Vec2(0.3, 0.0),
-            lifetime=4.0
-        )
+            lifetime=4.0,
+        ),
     )
 
 
@@ -126,52 +127,56 @@ class AnimatedAlphaParticle(LifetimeParticle):
     """A custom particle that animates between three different alpha levels"""
 
     def __init__(
-            self,
-            filename_or_texture: PathOrTexture,
-            change_xy: Vec2,
-            start_alpha: int = 0,
-            duration1: float = 1.0,
-            mid_alpha: int = 255,
-            duration2: float = 1.0,
-            end_alpha: int = 0,
-            center_xy: Point = (0.0, 0.0),
-            angle: float = 0,
-            change_angle: float = 0,
-            scale: float = 1.0,
-            mutation_callback=None,
+        self,
+        filename_or_texture: PathOrTexture | None,
+        change_xy: Vec2,
+        start_alpha: int = 0,
+        duration1: float = 1.0,
+        mid_alpha: int = 255,
+        duration2: float = 1.0,
+        end_alpha: int = 0,
+        center_xy: Point = (0.0, 0.0),
+        angle: float = 0,
+        change_angle: float = 0,
+        scale: float = 1.0,
+        mutation_callback=None,
     ):
-        super().__init__(filename_or_texture,
-                         change_xy,
-                         duration1 + duration2,
-                         center_xy,
-                         angle,
-                         change_angle,
-                         scale,
-                         start_alpha,
-                         mutation_callback)
+        super().__init__(
+            filename_or_texture,
+            change_xy,
+            duration1 + duration2,
+            center_xy,
+            angle,
+            change_angle,
+            scale,
+            start_alpha,
+            mutation_callback,
+        )
         self.start_alpha = start_alpha
         self.in_duration = duration1
         self.mid_alpha = mid_alpha
         self.out_duration = duration2
         self.end_alpha = end_alpha
 
-    def update(self):
-        super().update()
+    def update(self, delta_time: float = 1 / 60):
+        super().update(delta_time)
         if self.lifetime_elapsed <= self.in_duration:
             u = self.lifetime_elapsed / self.in_duration
-            self.alpha = clamp(lerp(self.start_alpha, self.mid_alpha, u), 0, 255)
+            self.alpha = int(clamp(lerp(self.start_alpha, self.mid_alpha, u), 0, 255))
         else:
             u = (self.lifetime_elapsed - self.in_duration) / self.out_duration
-            self.alpha = clamp(lerp(self.mid_alpha, self.end_alpha, u), 0, 255)
+            self.alpha = int(clamp(lerp(self.mid_alpha, self.end_alpha, u), 0, 255))
 
 
 class RocketEmitter(Emitter):
-    """Custom emitter class to add gravity to the emitter to represent gravity on the firework shell"""
-
-    def update(self):
-        super().update()
+    """
+    Custom emitter class to add gravity to the emitter to
+    represent gravity on the firework shell.
+    """
+    def update(self, delta_time: float = 1 / 60):
+        super().update(delta_time)
         # gravity
-        self.change_y += -0.05
+        self.change_y += -0.05 * (60 * delta_time)
 
 
 class FireworksApp(arcade.Window):
@@ -179,7 +184,7 @@ class FireworksApp(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
         self.background_color = arcade.color.BLACK
-        self.emitters = []
+        self.emitters: list[Emitter] = []
 
         self.launch_firework(0)
         arcade.schedule(self.launch_spinner, 4.0)
@@ -195,8 +200,8 @@ class FireworksApp(arcade.Window):
                 mid_alpha=128,
                 duration2=random.uniform(2.0, 6.0),
                 end_alpha=0,
-                center_xy=rand_in_rect((0.0, 0.0), SCREEN_WIDTH, SCREEN_HEIGHT)
-            )
+                center_xy=rand_in_rect(LBWH(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)),
+            ),
         )
         self.emitters.append(stars)
 
@@ -215,8 +220,8 @@ class FireworksApp(arcade.Window):
                 mid_alpha=255,
                 duration2=random.uniform(5.0, 10.0),
                 end_alpha=0,
-                center_xy=rand_in_circle((0.0, 0.0), 50)
-            )
+                center_xy=rand_in_circle((0.0, 0.0), 50),
+            ),
         )
         self.emitters.append(self.cloud)
 
@@ -227,7 +232,10 @@ class FireworksApp(arcade.Window):
             self.launch_sparkle_firework,
         )
         random.choice(launchers)(delta_time)
-        pyglet.clock.schedule_once(self.launch_firework, random.uniform(LAUNCH_INTERVAL_MIN, LAUNCH_INTERVAL_MAX))
+        pyglet.clock.schedule_once(
+            self.launch_firework,
+            random.uniform(LAUNCH_INTERVAL_MIN, LAUNCH_INTERVAL_MAX),
+        )
 
     def launch_random_firework(self, _delta_time):
         """Simple firework that explodes in a random color"""
@@ -235,7 +243,7 @@ class FireworksApp(arcade.Window):
         self.emitters.append(rocket)
 
     def launch_ringed_firework(self, _delta_time):
-        """"Firework that has a basic explosion and a ring of sparks of a different color"""
+        """ "Firework that has a basic explosion and a ring of sparks of a different color"""
         rocket = make_rocket(self.explode_ringed_firework)
         self.emitters.append(rocket)
 
@@ -253,7 +261,10 @@ class FireworksApp(arcade.Window):
         self.emitters.append(spinner2)
 
     def explode_firework(self, prev_emitter):
-        """Actions that happen when a firework shell explodes, resulting in a typical firework"""
+        """
+        Actions that happen when a firework shell explodes,
+        resulting in a typical firework
+        """
         self.emitters.append(make_puff(prev_emitter))
         self.emitters.append(make_flash(prev_emitter))
 
@@ -265,13 +276,16 @@ class FireworksApp(arcade.Window):
                 filename_or_texture=spark_texture,
                 change_xy=rand_in_circle(center=(0.0, 0.0), radius=9.0),
                 lifetime=random.uniform(0.5, 1.2),
-                mutation_callback=firework_spark_mutator
-            )
+                mutation_callback=firework_spark_mutator,
+            ),
         )
         self.emitters.append(sparks)
 
     def explode_ringed_firework(self, prev_emitter):
-        """Actions that happen when a firework shell explodes, resulting in a ringed firework"""
+        """
+        Actions that happen when a firework shell explodes,
+        resulting in a ringed firework.
+        """
         self.emitters.append(make_puff(prev_emitter))
         self.emitters.append(make_flash(prev_emitter))
 
@@ -283,8 +297,8 @@ class FireworksApp(arcade.Window):
                 filename_or_texture=spark_texture,
                 change_xy=rand_in_circle((0.0, 0.0), 8.0),
                 lifetime=random.uniform(0.55, 0.8),
-                mutation_callback=firework_spark_mutator
-            )
+                mutation_callback=firework_spark_mutator,
+            ),
         )
         self.emitters.append(sparks)
 
@@ -295,13 +309,16 @@ class FireworksApp(arcade.Window):
                 filename_or_texture=ring_texture,
                 change_xy=rand_on_circle(center=(0.0, 0.0), radius=5.0),
                 lifetime=random.uniform(1.0, 1.6),
-                mutation_callback=firework_spark_mutator
-            )
+                mutation_callback=firework_spark_mutator,
+            ),
         )
         self.emitters.append(ring)
 
     def explode_sparkle_firework(self, prev_emitter):
-        """Actions that happen when a firework shell explodes, resulting in a sparkling firework"""
+        """
+        Actions that happen when a firework shell explodes,
+        resulting in a sparkling firework.
+        """
         self.emitters.append(make_puff(prev_emitter))
         self.emitters.append(make_flash(prev_emitter))
 
@@ -317,8 +334,8 @@ class FireworksApp(arcade.Window):
                 mid_alpha=0,
                 duration2=random.uniform(0.1, 0.2),
                 end_alpha=255,
-                mutation_callback=firework_spark_mutator
-            )
+                mutation_callback=firework_spark_mutator,
+            ),
         )
         self.emitters.append(sparks)
 
@@ -330,7 +347,7 @@ class FireworksApp(arcade.Window):
             self.cloud.center_x = 0
         # update
         for e in emitters_to_update:
-            e.update()
+            e.update(delta_time)
         # remove emitters that can be reaped
         to_del = [e for e in emitters_to_update if e.can_reap()]
         for e in to_del:
@@ -342,7 +359,13 @@ class FireworksApp(arcade.Window):
             e.draw()
         arcade.draw_lrbt_rectangle_filled(0, SCREEN_WIDTH, 0, 25, arcade.color.DARK_GREEN)
         mid = SCREEN_WIDTH / 2
-        arcade.draw_lrbt_rectangle_filled(mid - 2, mid + 2, 10, SPINNER_HEIGHT, arcade.color.DARK_BROWN)
+        arcade.draw_lrbt_rectangle_filled(
+            mid - 2,
+            mid + 2,
+            10,
+            SPINNER_HEIGHT,
+            arcade.color.DARK_BROWN,
+        )
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.ESCAPE:
@@ -359,9 +382,17 @@ def firework_spark_mutator(particle: FadeParticle):
 
 
 def rocket_smoke_mutator(particle: LifetimeParticle):
-    particle.scale = lerp(0.5, 3.0, particle.lifetime_elapsed / particle.lifetime_original)
+    particle.scale = lerp(
+        0.5,
+        3.0,
+        particle.lifetime_elapsed / particle.lifetime_original  # type: ignore
+    )
+
+
+def main():
+    app = FireworksApp()
+    app.run()
 
 
 if __name__ == "__main__":
-    app = FireworksApp()
-    arcade.run()
+    main()

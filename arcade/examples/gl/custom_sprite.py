@@ -22,8 +22,10 @@ Hold and drag the mouse to scroll around.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.custom_sprite
 """
+
 from random import randint
 from array import array
+
 import arcade
 from arcade.gl.types import BufferDescription
 
@@ -32,6 +34,7 @@ class GeoSprites(arcade.Window):
 
     def __init__(self):
         super().__init__(800, 600, "Custom Sprites", resizable=True)
+        self.camera = arcade.camera.Camera2D()
         self.program = self.ctx.program(
             vertex_shader="""
             #version 330
@@ -84,23 +87,25 @@ class GeoSprites(arcade.Window):
                 // Emit a triangle strip of 4 vertices making a triangle.
                 // The fragment shader will then fill these to triangles in the next stage.
 
+                mat4 mvp = window.projection * window.view;
+
                 // Upper left
-                gl_Position = window.projection * window.view * vec4(vec2(-hsize.x, hsize.y) + center, 0.0, 1.0);
+                gl_Position = mvp * vec4(vec2(-hsize.x, hsize.y) + center, 0.0, 1.0);
                 uv = vec2(0, 1);
                 EmitVertex();
 
                 // lower left
-                gl_Position = window.projection * window.view * vec4(vec2(-hsize.x, -hsize.y) + center, 0.0, 1.0);
+                gl_Position = mvp * vec4(vec2(-hsize.x, -hsize.y) + center, 0.0, 1.0);
                 uv = vec2(0, 0);
                 EmitVertex();
 
                 // upper right
-                gl_Position = window.projection * window.view * vec4(vec2(hsize.x, hsize.y) + center, 0.0, 1.0);
+                gl_Position = mvp * vec4(vec2(hsize.x, hsize.y) + center, 0.0, 1.0);
                 uv = vec2(1, 1);
                 EmitVertex();
 
                 // lower right
-                gl_Position = window.projection * window.view * vec4(vec2(hsize.x, -hsize.y) + center, 0.0, 1.0);
+                gl_Position = mvp * vec4(vec2(hsize.x, -hsize.y) + center, 0.0, 1.0);
                 uv = vec2(1, 0);
                 EmitVertex();
 
@@ -137,16 +142,19 @@ class GeoSprites(arcade.Window):
 
         self.num_sprites = 1000
         # Make an interleaved buffer with positions and sizes
-        self.vertex_buffer = self.ctx.buffer(data=array('f', self.gen_sprites(self.num_sprites)))
+        self.vertex_buffer = self.ctx.buffer(data=array("f", self.gen_sprites(self.num_sprites)))
         # Mage a geometry object describing the buffer contents for our shader
         self.geometry = self.ctx.geometry(
-            content=[
-                BufferDescription(self.vertex_buffer, "2f 2f", ["in_position", "in_size"])
-            ]
+            content=[BufferDescription(self.vertex_buffer, "2f 2f", ["in_position", "in_size"])]
         )
+
+    def on_resize(self, width: int, height: int):
+        super().on_resize(width, height)
+        self.camera.match_screen(and_position=True)
 
     def on_draw(self):
         self.clear()
+        self.camera.use()
         # Bind our sprite texture to channel 0
         self.texture.use(unit=0)
         # Render the sprite data with our shader
@@ -154,13 +162,7 @@ class GeoSprites(arcade.Window):
 
     def on_mouse_drag(self, x: float, y: float, dx: float, dy: float, buttons: int, modifiers: int):
         """Make it easier to explore the geometry by scrolling"""
-        proj = self.ctx.projection_2d
-        self.ctx.projection_2d = (
-            proj[0] - dx,
-            proj[1] - dx,
-            proj[2] - dy,
-            proj[3] - dy,
-        )
+        self.camera.position = self.camera.position[0] - dx, self.camera.position[1] - dy
 
     def gen_sprites(self, count: int):
         """Quickly generate some random sprite data"""

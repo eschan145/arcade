@@ -5,11 +5,12 @@ with a texture doing some simple pixel manipulations.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.shader_setup
 """
+
 import arcade
 from arcade.gl import geometry
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Shader Setup With Pixel Manipulation"
 
 
@@ -17,7 +18,6 @@ class ShaderSetup(arcade.Window):
 
     def __init__(self, width, height, title):
         super().__init__(width, height, title, resizable=True)
-        self.time = 0
         self.program = self.ctx.program(
             vertex_shader="""
             #version 330
@@ -72,7 +72,7 @@ class ShaderSetup(arcade.Window):
                 // Read a pixel using the distorted texture coordinates and write to screen
                 out_color = texture(background, uv);
             }
-            """
+            """,
         )
         # Configure the sampler to read from texture channel 0.
         # Sampler uniforms are simply integers containing what
@@ -91,9 +91,6 @@ class ShaderSetup(arcade.Window):
         self.texture.use(0)
         # Draw the geometry using the program
         self.quad.render(self.program)
-
-    def on_update(self, dt):
-        self.time += dt
 
 
 ShaderSetup(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE).run()

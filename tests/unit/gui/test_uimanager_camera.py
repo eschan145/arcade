@@ -1,39 +1,62 @@
-import pytest
+from unittest.mock import Mock
 
 import arcade
-from arcade.gui import UIMouseReleaseEvent
-from pyglet.math import Vec2
+from arcade import LBWH
+from arcade.gui import UIFlatButton
 
 
-@pytest.mark.xfail
-def test_ui_manager_respects_camera_viewport(uimanager, window):
+def test_ui_manager_respects_window_camera(uimanager, window):
     # GIVEN
-    uimanager.use_super_mouse_adjustment = True
-    camera = arcade.Camera(viewport=(0, 0, window.width, window.height), window=window)
+    in_game_cam = arcade.Camera2D(viewport=LBWH(100, 100, window.width, window.height))
+
+    button = uimanager.add(UIFlatButton(text="BottomLeftButton", width=100, height=100))
+    button.on_click = Mock()
 
     # WHEN
-    camera.viewport = 0, 0, 300, 200
-    camera.use()
-
-    uimanager.click(100, 100)
+    in_game_cam.use()
+    uimanager.click(50, 50)
 
     # THEN
-    assert isinstance(uimanager.last_event, UIMouseReleaseEvent)
-    assert uimanager.last_event.pos == (200, 200)
+    assert button.on_click.called
 
-@pytest.mark.xfail
-def test_ui_manager_respects_camera_pos(uimanager, window):
+
+def test_ui_manager_use_positioned_camera(uimanager, window):
     # GIVEN
-    uimanager.use_super_mouse_adjustment = True
-    camera = arcade.Camera(viewport=(0, 0, window.width, window.height), window=window)
+    button = uimanager.add(UIFlatButton(text="BottomLeftButton", width=100, height=100))
+    button.on_click = Mock()
 
     # WHEN
-    camera.position = Vec2(-100, -100)
-    camera.update()
-    camera.use()
-
-    uimanager.click(100, 100)
+    # this moves the camera bottom left and UI elements are shown more to the top right
+    uimanager.camera.bottom_left = (-100, -100)
+    uimanager.click(150, 150)
 
     # THEN
-    assert isinstance(uimanager.last_event, UIMouseReleaseEvent)
-    assert uimanager.last_event.pos == (200, 200)
+    assert button.on_click.called
+
+
+def test_ui_manager_use_rotated_camera(uimanager, window):
+    # GIVEN
+    button = uimanager.add(UIFlatButton(text="BottomLeftButton", width=100, height=100))
+    button.on_click = Mock()
+
+    # WHEN
+    uimanager.camera.angle = 90
+    x, y = uimanager.camera.project((50, 50))
+    uimanager.click(x, y)
+
+    # THEN
+    assert button.on_click.called, (uimanager.camera.project((50, 50)), window.size)
+
+
+def test_ui_manager_use_zoom_camera(uimanager, window):
+    # GIVEN
+    button = uimanager.add(UIFlatButton(text="BottomLeftButton", width=100, height=100))
+    button.on_click = Mock()
+
+    # WHEN
+    uimanager.camera.zoom = 0.9
+    x, y = uimanager.camera.project((50, 50))
+    uimanager.click(x, y)
+
+    # THEN
+    assert button.on_click.called

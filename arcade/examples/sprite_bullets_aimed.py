@@ -13,13 +13,13 @@ import random
 import arcade
 import math
 
-SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_COIN = 0.2
+SPRITE_SCALING_PLAYER = 0.6
+SPRITE_SCALING_COIN = 0.4
 SPRITE_SCALING_LASER = 0.8
 COIN_COUNT = 50
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprites and Bullets Aimed Example"
 
 BULLET_SPEED = 5
@@ -76,7 +76,10 @@ class MyGame(arcade.Window):
 
             # Create the coin instance
             # Coin image from kenney.nl
-            coin = arcade.Sprite(":resources:images/items/coinGold.png", scale=SPRITE_SCALING_COIN)
+            coin = arcade.Sprite(
+                ":resources:images/items/coinGold.png",
+                scale=SPRITE_SCALING_COIN,
+            )
 
             # Position the coin
             coin.center_x = random.randrange(SCREEN_WIDTH)
@@ -107,7 +110,10 @@ class MyGame(arcade.Window):
         """ Called whenever the mouse button is clicked. """
 
         # Create a bullet
-        bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", scale=SPRITE_SCALING_LASER)
+        bullet = arcade.Sprite(
+            ":resources:images/space_shooter/laserBlue01.png",
+            scale=SPRITE_SCALING_LASER,
+        )
 
         # Position the bullet at the player's current location
         start_x = self.player_sprite.center_x
@@ -128,13 +134,13 @@ class MyGame(arcade.Window):
         y_diff = dest_y - start_y
         angle = math.atan2(y_diff, x_diff)
 
-        # Angle the bullet sprite so it doesn't look like it is flying
-        # sideways.
-        bullet.angle = math.degrees(angle)
+        # Rotate the sprite clockwise to align it with its travel path
+        bullet.angle = - math.degrees(angle)
         print(f"Bullet angle: {bullet.angle:.2f}")
 
-        # Taking into account the angle, calculate our change_x
-        # and change_y. Velocity is how fast the bullet travels.
+        # Use the angle to calculate the velocity's change_x and
+        # change_y from speed. Speed is a directionless value, but
+        # the idea of velocity also includes direction.
         bullet.change_x = math.cos(angle) * BULLET_SPEED
         bullet.change_y = math.sin(angle) * BULLET_SPEED
 
@@ -163,7 +169,11 @@ class MyGame(arcade.Window):
                 self.score += 1
 
             # If the bullet flies off-screen, remove it.
-            if bullet.bottom > self.width or bullet.top < 0 or bullet.right < 0 or bullet.left > self.width:
+            if (bullet.bottom > self.width or
+                bullet.top < 0 or
+                bullet.right < 0 or
+                bullet.left > self.width
+            ):
                 bullet.remove_from_sprite_lists()
 
 

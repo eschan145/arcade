@@ -10,12 +10,13 @@ import math
 from typing import Tuple
 
 import arcade
-from arcade.resources import (
-    image_female_person_idle,
-    image_laser_blue01,
-    image_zombie_idle,
-)
 from arcade.types import Color
+
+IMAGE_FEMALE_PERSON_IDLE = (
+    ":assets:images/animated_characters/female_person/femalePerson_idle.png"
+)
+IMAGE_LASER_BLUE01 = ":assets:images/space_shooter/laserBlue01.png"
+IMAGE_ZOMBIE_IDLE = ":assets:images/animated_characters/zombie/zombie_idle.png"
 
 SPRITE_SCALING_PLAYER = 0.5
 SPRITE_SCALING_ENEMY = 0.5
@@ -26,8 +27,8 @@ BULLET_SPEED = 150
 BULLET_DAMAGE = 1
 PLAYER_HEALTH = 5
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite Health Bars"
 
 
@@ -48,11 +49,11 @@ def sprite_off_screen(
 class Player(arcade.Sprite):
     def __init__(self, bar_list: arcade.SpriteList) -> None:
         super().__init__(
-            image_female_person_idle,
+            IMAGE_FEMALE_PERSON_IDLE,
             scale=SPRITE_SCALING_PLAYER,
         )
         self.indicator_bar: IndicatorBar = IndicatorBar(
-            self, bar_list, (self.center_x, self.center_y), scale=1.5,
+            self, bar_list, (self.center_x, self.center_y), scale=(1.5, 1.5),
         )
         self.health: int = PLAYER_HEALTH
 
@@ -60,11 +61,11 @@ class Player(arcade.Sprite):
 class Bullet(arcade.Sprite):
     def __init__(self) -> None:
         super().__init__(
-            image_laser_blue01,
+            IMAGE_LASER_BLUE01,
             scale=SPRITE_SCALING_BULLET,
         )
 
-    def on_update(self, delta_time: float = 1 / 60) -> None:
+    def update(self, delta_time: float = 1 / 60) -> None:
         """Updates the bullet's position."""
         self.position = (
             self.center_x + self.change_x * delta_time,
@@ -76,16 +77,25 @@ class IndicatorBar:
     """
     Represents a bar which can display information about a sprite.
 
-    :param Player owner: The owner of this indicator bar.
-    :param arcade.SpriteList sprite_list: The sprite list used to draw the indicator
-        bar components.
-    :param Tuple[float, float] position: The initial position of the bar.
-    :param Color full_color: The color of the bar.
-    :param Color background_color: The background color of the bar.
-    :param int width: The width of the bar.
-    :param int height: The height of the bar.
-    :param int border_size: The size of the bar's border.
-    :param float scale: The scale of the indicator bar.
+    Args:
+        owner:
+            The owner of this indicator bar.
+        sprite_list:
+            The sprite list used to draw the indicator bar components.
+        position:
+            The initial position of the bar.
+        full_color:
+            The color of the bar.
+        background_color:
+            The background color of the bar.
+        width:
+            The width of the bar.
+        height:
+            The height of the bar.
+        border_size:
+            The size of the bar's border.
+        scale:
+            The scale of the indicator bar.
     """
 
     def __init__(
@@ -98,7 +108,7 @@ class IndicatorBar:
         width: int = 100,
         height: int = 4,
         border_size: int = 4,
-        scale: float = 1.0,
+        scale: Tuple[float, float] = (1.0, 1.0),
     ) -> None:
         # Store the reference to the owner and the sprite list
         self.owner: Player = owner
@@ -110,7 +120,7 @@ class IndicatorBar:
         self._center_x: float = 0.0
         self._center_y: float = 0.0
         self._fullness: float = 0.0
-        self._scale: float = 1.0
+        self._scale: Tuple[float, float] = (1.0, 1.0)
 
         # Create the boxes needed to represent the indicator bar
         self._background_box: arcade.SpriteSolidColor = arcade.SpriteSolidColor(
@@ -206,8 +216,8 @@ class IndicatorBar:
         else:
             # Set the full_box to be visible incase it wasn't then update the bar
             self.full_box.visible = True
-            self.full_box.width = self._bar_width * new_fullness * self.scale
-            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale
+            self.full_box.width = self._bar_width * new_fullness * self.scale[0]
+            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
 
     @property
     def position(self) -> Tuple[float, float]:
@@ -224,15 +234,15 @@ class IndicatorBar:
             self.full_box.position = new_position
 
             # Make sure full_box is to the left of the bar instead of the middle
-            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale
+            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
 
     @property
-    def scale(self) -> float:
+    def scale(self) -> Tuple[float, float]:
         """Returns the scale of the bar."""
         return self._scale
 
     @scale.setter
-    def scale(self, value: float) -> None:
+    def scale(self, value: Tuple[float, float]) -> None:
         """Sets the new scale of the bar."""
         # Check if the scale has changed. If so, change the bar's scale
         if value != self.scale:
@@ -256,7 +266,7 @@ class MyGame(arcade.Window):
         self.player_sprite_list.append(self.player_sprite)
 
         # Create enemy Sprite
-        self.enemy_sprite = arcade.Sprite(image_zombie_idle, scale=SPRITE_SCALING_ENEMY)
+        self.enemy_sprite = arcade.Sprite(IMAGE_ZOMBIE_IDLE, scale=SPRITE_SCALING_ENEMY)
         self.enemy_sprite_list.append(self.enemy_sprite)
 
         # Create text objects
@@ -318,7 +328,7 @@ class MyGame(arcade.Window):
         )
 
         # Call updates on bullet sprites
-        self.bullet_list.on_update(delta_time)
+        self.bullet_list.update(delta_time)
 
         # Check if the enemy can attack. If so, shoot a bullet from the
         # enemy towards the player

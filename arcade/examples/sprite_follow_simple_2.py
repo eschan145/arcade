@@ -21,8 +21,8 @@ SPRITE_SCALING_COIN = 0.2
 COIN_COUNT = 5
 COIN_SPEED = 0.5
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite Follow Player Simple Example 2"
 
 SPRITE_SPEED = 0.5
@@ -103,8 +103,10 @@ class MyGame(arcade.Window):
 
         # Set up the player
         # Character image from kenney.nl
-        self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
-                                           scale=SPRITE_SCALING_PLAYER)
+        self.player_sprite = arcade.Sprite(
+            ":resources:images/animated_characters/female_person/femalePerson_idle.png",
+            scale=SPRITE_SCALING_PLAYER,
+        )
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)

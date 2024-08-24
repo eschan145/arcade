@@ -1,5 +1,4 @@
-"""
-The better gui for arcade
+"""The better gui for arcade
 
 - Improved events, now fully typed
 - UIElements are now called Widgets (like everywhere else)
@@ -8,28 +7,33 @@ The better gui for arcade
 - Texts are now rendered with pyglet, open easier support for text areas with scrolling
 - TextArea with scroll support
 """
-from collections import defaultdict
-from typing import List, Dict, TypeVar, Iterable, Optional, Type
 
-from pyglet.event import EventDispatcher, EVENT_HANDLED, EVENT_UNHANDLED
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import Iterable, Optional, TypeVar, Union
+
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventDispatcher
+from typing_extensions import TypeGuard
 
 import arcade
+from arcade.gui import UIEvent
 from arcade.gui.events import (
+    UIKeyPressEvent,
+    UIKeyReleaseEvent,
+    UIMouseDragEvent,
     UIMouseMovementEvent,
     UIMousePressEvent,
     UIMouseReleaseEvent,
     UIMouseScrollEvent,
-    UITextEvent,
-    UIMouseDragEvent,
+    UIOnUpdateEvent,
+    UITextInputEvent,
     UITextMotionEvent,
     UITextMotionSelectEvent,
-    UIKeyPressEvent,
-    UIKeyReleaseEvent,
-    UIOnUpdateEvent,
 )
 from arcade.gui.surface import Surface
-from arcade.gui.widgets import UIWidget, Rect
-from arcade.camera import SimpleCamera
+from arcade.gui.widgets import UIWidget
+from arcade.types import LBWH, AnchorPoint, Point2, Rect
 
 W = TypeVar("W", bound=UIWidget)
 
@@ -40,10 +44,12 @@ class UIManager(EventDispatcher):
     Handles window events, layout process and rendering.
 
     To process window events, :py:meth:`UIManager.enable()` has to be called,
-    which will inject event callbacks for all window events and redirects them through the widget tree.
+    which will inject event callbacks for all window events and redirects them
+    through the widget tree.
 
-    If used within a view :py:meth:`UIManager.enable()` should be called from :py:meth:`View.on_show_view()` and
-    :py:meth:`UIManager.disable()` should be called from :py:meth:`View.on_hide_view()`
+    If used within a view :py:meth:`UIManager.enable()` should be called from
+    :py:meth:`View.on_show_view()` and :py:meth:`UIManager.disable()` should be
+    called from :py:meth:`View.on_hide_view()`
 
     Supports `size_hint` to grow/shrink direct children dependent on window size.
     Supports `size_hint_min` to ensure size of direct children (e.g. UIBoxLayout).
@@ -76,6 +82,8 @@ class UIManager(EventDispatcher):
 
                 manager.draw() # draws the UI on screen
 
+    Args:
+        window: The window to bind the UIManager to, if None the current window is used.
     """
 
     _enabled = False
@@ -84,29 +92,34 @@ class UIManager(EventDispatcher):
 
     def __init__(self, window: Optional[arcade.Window] = None):
         super().__init__()
+
         self.window = window or arcade.get_window()
-        self._surfaces: Dict[int, Surface] = {}
-        self.children: Dict[int, List[UIWidget]] = defaultdict(list)
-        self._rendered = False
-        #: Camera used when drawing the UI
-        self.camera = SimpleCamera()
-        self.register_event_type("on_event")
+        self._surfaces: dict[int, Surface] = {}
+        self.children: dict[int, list[UIWidget]] = defaultdict(list)
+        self._requires_render = True
+        self.camera = arcade.Camera2D()
+        self._render_to_surface_camera = arcade.Camera2D()
+        # this camera is used for rendering the UI and should not be changed by the user
+
+        self.register_event_type("on_event")  # type: ignore  # https://github.com/pyglet/pyglet/pull/1173  # noqa
 
     def add(self, widget: W, *, index=None, layer=0) -> W:
-        """
-        Add a widget to the :class:`UIManager`.
+        """Add a widget to the :class:`UIManager`.
+
         Added widgets will receive ui events and be rendered.
 
-        By default the latest added widget will receive ui events first and will be rendered on top of others.
+        By default, the latest added widget will receive ui events first and will
+        be rendered on top of others.
 
-        The UIManager supports layered setups, widgets added to a higher layer are drawn above lower layers
-        and receive events first.
+        The UIManager supports layered setups, widgets added to a higher layer are
+        drawn above lower layers and receive events first.
         The layer 10 is reserved for overlaying components like dropdowns or tooltips.
 
-        :param widget: widget to add
-        :param index: position a widget is added, None has the highest priority
-        :param layer: layer which the widget should be added to, higher layer are above
-        :return: the widget
+        Args:
+            widget: widget to add
+            index: position a widget is added, None has the highest priority
+            layer: layer which the widget should be added to, higher layer are above
+
         """
         if index is None:
             self.children[layer].append(widget)
@@ -117,10 +130,10 @@ class UIManager(EventDispatcher):
         return widget
 
     def remove(self, child: UIWidget):
-        """
-        Removes the given widget from UIManager.
+        """Removes the given widget from UIManager.
 
-        :param UIWidget child: widget to remove
+        Args:
+            child: widget to remove
         """
         for children in self.children.values():
             if child in children:
@@ -129,11 +142,11 @@ class UIManager(EventDispatcher):
                 self.trigger_render()
 
     def walk_widgets(self, *, root: Optional[UIWidget] = None, layer=0) -> Iterable[UIWidget]:
-        """
-        walks through widget tree, in reverse draw order (most top drawn widget first)
+        """Walks through widget tree, in reverse draw order (most top drawn widget first)
 
-        :param root: root widget to start from, if None, the layer is used
-        :param layer: layer to search, None will search through all layers
+        Args:
+            root: root widget to start from, if None, the layer is used
+            layer: layer to search, None will search through all layers
         """
         if layer is None:
             layers = sorted(self.children.keys(), reverse=True)
@@ -141,34 +154,34 @@ class UIManager(EventDispatcher):
             layers = [layer]
 
         for layer in layers:
-
             children = root.children if root else self.children[layer]
             for child in reversed(children):
                 yield from self.walk_widgets(root=child)
                 yield child
 
     def clear(self):
-        """
-        Remove all widgets from UIManager
-        """
+        """Remove all widgets from UIManager"""
         for layer in self.children.values():
             for widget in layer[:]:
                 self.remove(widget)
 
-    def get_widgets_at(self, pos, cls: Type[W] = UIWidget, layer=0) -> Iterable[W]:
-        """
-        Yields all widgets containing a position, returns first top laying widgets which is instance of cls.
+    def get_widgets_at(self, pos: Point2, cls: type[W] = UIWidget, layer=0) -> Iterable[W]:
+        """Yields all widgets containing a position, returns first top laying widgets
+        which is instance of cls.
 
-        :param pos: Pos within the widget bounds
-        :param cls: class which the widget should be an instance of
-        :param layer: layer to search, None will search through all layers
-        :return: iterator of widgets of given type at position
+        Args:
+            pos: Pos within the widget bounds
+            cls: class which the widget should be an instance of
+            layer: layer to search, None will search through all layers
+
+        Returns: iterator of widgets of given type at position
         """
-        def check_type(widget) -> W:  # should be TypeGuard[W]
-            return isinstance(widget, cls)  # type: ignore
+
+        def check_type(widget) -> TypeGuard[W]:
+            return isinstance(widget, cls)
 
         for widget in self.walk_widgets(layer=layer):
-            if check_type(widget) and widget.rect.collide_with_point(*pos):
+            if check_type(widget) and widget.rect.point_in_rect(pos):
                 yield widget
 
     def _get_surface(self, layer: int) -> Surface:
@@ -184,10 +197,15 @@ class UIManager(EventDispatcher):
         return self._surfaces[layer]
 
     def trigger_render(self):
+        """Request rendering of all widgets before next draw"""
+        self._requires_render = True
+
+    def execute_layout(self):
+        """Execute layout process for all widgets.
+
+        This is automatically called during :py:meth:`UIManager.draw()`.
         """
-        Request rendering of all widgets
-        """
-        self._rendered = False
+        self._do_layout()
 
     def _do_layout(self):
         layers = sorted(self.children.keys())
@@ -198,28 +216,34 @@ class UIManager(EventDispatcher):
             surface_width, surface_height = surface.size
 
             for child in self.children[layer]:
+                # prepare children, so size_hints are calculated
+                child._prepare_layout()
 
+                # actual layout
                 if child.size_hint:
                     sh_x, sh_y = child.size_hint
                     nw = surface_width * sh_x if sh_x else None
                     nh = surface_height * sh_y if sh_y else None
-                    child.rect = child.rect.resize(nw, nh)
+                    child.rect = child.rect.resize(nw, nh, anchor=AnchorPoint.BOTTOM_LEFT)
 
                 if child.size_hint_min:
                     shm_w, shm_h = child.size_hint_min
-                    child.rect = child.rect.min_size(shm_w or 0, shm_h or 0)
+                    child.rect = child.rect.min_size(
+                        shm_w or 0, shm_h or 0, anchor=AnchorPoint.BOTTOM_LEFT
+                    )
 
                 if child.size_hint_max:
                     shm_w, shm_h = child.size_hint_max
                     child.rect = child.rect.max_size(
-                        shm_w or child.width, shm_h or child.height
+                        shm_w or child.width, shm_h or child.height, anchor=AnchorPoint.BOTTOM_LEFT
                     )
 
+                # continue layout process down the tree
                 child._do_layout()
 
     def _do_render(self, force=False):
         layers = sorted(self.children.keys())
-        force = force or not self._rendered
+        force = force or self._requires_render
         for layer in layers:
             surface = self._get_surface(layer)
 
@@ -233,11 +257,10 @@ class UIManager(EventDispatcher):
                 for child in self.children[layer]:
                     child._do_render(surface, force)
 
-        self._rendered = True
+        self._requires_render = False
 
     def enable(self) -> None:
-        """
-        Registers handler functions (`on_...`) to :py:attr:`arcade.gui.UIElement`
+        """Registers handler functions (`on_...`) to :py:attr:`arcade.gui.UIElement`
 
         on_draw is not registered, to provide full control about draw order,
         so it has to be called by the devs themselves.
@@ -262,8 +285,7 @@ class UIManager(EventDispatcher):
             )
 
     def disable(self) -> None:
-        """
-        Remove handler functions (`on_...`) from :py:attr:`arcade.Window`
+        """Remove handler functions (`on_...`) from :py:attr:`arcade.Window`
 
         If every :py:class:`arcade.View` uses its own :py:class:`arcade.gui.UIManager`,
         this method should be called in :py:meth:`arcade.View.on_hide_view()`.
@@ -286,40 +308,51 @@ class UIManager(EventDispatcher):
             )
 
     def on_update(self, time_delta):
+        """Dispatches an update event to all widgets in the UIManager."""
         return self.dispatch_ui_event(UIOnUpdateEvent(self, time_delta))
 
     def draw(self) -> None:
-        # Request Widgets to prepare for next frame
-        self._do_layout()
+        """Will draw all widgets to the window.
+
+        UIManager caches all rendered widgets into a framebuffer (something like a
+        window sized image) and only updates the framebuffer if a widget requests
+        rendering via ``trigger_render()``.
+
+        To ensure that the children are positioned properly,
+        a layout process is executed before rendering, changes might also trigger a
+        re-rendering of all widgets.
+
+        Layouting is a two-step process:
+        1. Prepare layout, which prepares children and updates own values
+        2. Do layout, which actually sets the position and size of the children
+        """
+        # Request widgets to prepare for next frame
+        self.execute_layout()
 
         ctx = self.window.ctx
-        with ctx.enabled(ctx.BLEND):
+        with ctx.enabled(ctx.BLEND), self._render_to_surface_camera.activate():
             self._do_render()
 
-        # Draw layers
-        self.camera.use()
-        with ctx.enabled(ctx.BLEND):
-            layers = sorted(self.children.keys())
-            for layer in layers:
-                self._get_surface(layer).draw()
+        # Correct that the ui changes the currently active camera.
+        with self.camera.activate():
+            # Draw layers
+            with ctx.enabled(ctx.BLEND):
+                layers = sorted(self.children.keys())
+                for layer in layers:
+                    self._get_surface(layer).draw()
 
-    def adjust_mouse_coordinates(self, x, y):
-        """
-        This method is used, to translate mouse coordinates to coordinates
+    def adjust_mouse_coordinates(self, x: float, y: float) -> tuple[float, float]:
+        """This method is used, to translate mouse coordinates to coordinates
         respecting the viewport and projection of cameras.
-        The implementation should work in most common cases.
 
-        If you use scrolling in the :py:class:`arcade.Camera` you have to reset scrolling
-        or overwrite this method using the camera conversion::
-
-            ui_manager.adjust_mouse_coordinates = camera.mouse_coordinates_to_world
+        It uses the internal camera's map_coordinate methods, and should work with
+        all transformations possible with the basic orthographic camera.
         """
-        # NOTE: Only support scrolling until cameras support transforming
-        #       mouse coordinates
-        px, py = self.camera.position
-        return x + px, y + py
+        x_, y_, *c = self.camera.unproject((x, y))  # convert screen to ui coordinates
+        return x_, y_
 
-    def on_event(self, event) -> bool:
+    def on_event(self, event) -> Union[bool, None]:
+        """Forwards an event to all widgets in the UIManager."""
         layers = sorted(self.children.keys(), reverse=True)
         for layer in layers:
             for child in reversed(self.children[layer]):
@@ -328,60 +361,90 @@ class UIManager(EventDispatcher):
                     return EVENT_HANDLED
         return EVENT_UNHANDLED
 
-    def dispatch_ui_event(self, event):
+    def dispatch_ui_event(self, event: UIEvent):
+        """Dispatch a UI event to all widgets in the UIManager,
+        by triggering py:meth:`on_event()`.
+
+        Args:
+            event: The event to dispatch.
+        """
         return self.dispatch_event("on_event", event)
 
-    def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
-        x, y = self.adjust_mouse_coordinates(x, y)
-        return self.dispatch_ui_event(UIMouseMovementEvent(self, x, y, dx, dy))  # type: ignore
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        """Converts mouse motion event to UI event and dispatches it."""
+        x_, y_ = self.adjust_mouse_coordinates(x, y)
+        return self.dispatch_ui_event(UIMouseMovementEvent(self, round(x_), round(y_), dx, dy))
 
-    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-        x, y = self.adjust_mouse_coordinates(x, y)
-        return self.dispatch_ui_event(UIMousePressEvent(self, x, y, button, modifiers))  # type: ignore
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        """Converts mouse press event to UI event and dispatches it."""
+        x_, y_ = self.adjust_mouse_coordinates(x, y)
+        return self.dispatch_ui_event(
+            UIMousePressEvent(self, round(x_), round(y_), button, modifiers)
+        )
 
-    def on_mouse_drag(
-        self, x: float, y: float, dx: float, dy: float, buttons: int, modifiers: int
-    ):
-        x, y = self.adjust_mouse_coordinates(x, y)
-        return self.dispatch_ui_event(UIMouseDragEvent(self, x, y, dx, dy, buttons, modifiers))  # type: ignore
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        """Converts mouse drag event to UI event and dispatches it."""
+        x_, y_ = self.adjust_mouse_coordinates(x, y)
+        return self.dispatch_ui_event(
+            UIMouseDragEvent(self, round(x_), round(y_), dx, dy, buttons, modifiers)
+        )
 
-    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
-        x, y = self.adjust_mouse_coordinates(x, y)
-        return self.dispatch_ui_event(UIMouseReleaseEvent(self, x, y, button, modifiers))  # type: ignore
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        """Converts mouse release event to UI event and dispatches it."""
+        x_, y_ = self.adjust_mouse_coordinates(x, y)
+        return self.dispatch_ui_event(
+            UIMouseReleaseEvent(self, round(x_), round(y_), button, modifiers)
+        )
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        x, y = self.adjust_mouse_coordinates(x, y)
+        """Converts mouse scroll event to UI event and dispatches it."""
+        x_, y_ = self.adjust_mouse_coordinates(x, y)
         return self.dispatch_ui_event(
-            UIMouseScrollEvent(self, x, y, scroll_x, scroll_y)
+            UIMouseScrollEvent(self, round(x_), round(y_), scroll_x, scroll_y)
         )
 
     def on_key_press(self, symbol: int, modifiers: int):
-        return self.dispatch_ui_event(UIKeyPressEvent(self, symbol, modifiers))  # type: ignore
+        """Converts key press event to UI event and dispatches it."""
+        return self.dispatch_ui_event(UIKeyPressEvent(self, symbol, modifiers))
 
     def on_key_release(self, symbol: int, modifiers: int):
-        return self.dispatch_ui_event(UIKeyReleaseEvent(self, symbol, modifiers))  # type: ignore
+        """Converts key release event to UI event and dispatches it."""
+        return self.dispatch_ui_event(UIKeyReleaseEvent(self, symbol, modifiers))
 
     def on_text(self, text):
-        return self.dispatch_ui_event(UITextEvent(self, text))
+        """Converts text event to UI event and dispatches it."""
+        return self.dispatch_ui_event(UITextInputEvent(self, text))
 
     def on_text_motion(self, motion):
+        """Converts text motion event to UI event and dispatches it."""
         return self.dispatch_ui_event(UITextMotionEvent(self, motion))
 
     def on_text_motion_select(self, motion):
+        """Converts text motion select event to UI event and dispatches it."""
         return self.dispatch_ui_event(UITextMotionSelectEvent(self, motion))
 
     def on_resize(self, width, height):
-        scale = self.window.get_pixel_ratio()
-        self.camera.resize(width, height)
+        """Resize the UIManager and all of its surfaces."""
+        # resize ui camera
+        bottom_left = self.camera.bottom_left
+        self.camera.match_screen()
+        self.camera.bottom_left = bottom_left
 
+        # resize render to surface camera
+        bottom_left = self._render_to_surface_camera.bottom_left
+        self._render_to_surface_camera.match_screen()
+        self._render_to_surface_camera.bottom_left = bottom_left
+
+        scale = self.window.get_pixel_ratio()
         for surface in self._surfaces.values():
             surface.resize(size=(width, height), pixel_ratio=scale)
 
         self.trigger_render()
 
     @property
-    def rect(self) -> Rect:  # type: ignore
-        return Rect(0, 0, *self.window.get_size())
+    def rect(self) -> Rect:
+        """The rect of the UIManager, which is the window size."""
+        return LBWH(0, 0, *self.window.get_size())
 
     def debug(self):
         """Walks through all widgets of a UIManager and prints out the rect"""

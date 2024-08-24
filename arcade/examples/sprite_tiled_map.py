@@ -15,8 +15,8 @@ import arcade
 TILE_SCALING = 0.5
 PLAYER_SCALING = 1
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite Tiled Map Example"
 SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
@@ -68,15 +68,15 @@ class MyGame(arcade.Window):
         # Text
         self.fps_text = arcade.Text(
             "",
-            start_x=10,
-            start_y=40,
+            x=10,
+            y=40,
             color=arcade.color.BLACK,
             font_size=14
         )
         self.distance_text = arcade.Text(
             "0.0",
-            start_x=10,
-            start_y=20,
+            x=10,
+            y=20,
             color=arcade.color.BLACK,
             font_size=14,
         )
@@ -126,8 +126,8 @@ class MyGame(arcade.Window):
             self.player_sprite, walls, gravity_constant=GRAVITY
         )
 
-        self.camera = arcade.SimpleCamera()
-        self.gui_camera = arcade.SimpleCamera()
+        self.camera = arcade.camera.Camera2D()
+        self.gui_camera = arcade.camera.Camera2D()
 
         # Center camera on user
         self.pan_camera_to_user()
@@ -229,17 +229,19 @@ class MyGame(arcade.Window):
         """ Manage Scrolling """
 
         # This spot would center on the user
-        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player_sprite.center_y - (
-            self.camera.viewport_height / 2
-        )
-        if screen_center_x < 0:
-            screen_center_x = 0
-        if screen_center_y < 0:
-            screen_center_y = 0
+        screen_center_x = self.player_sprite.center_x
+        screen_center_y = self.player_sprite.center_y
+        if screen_center_x - self.width/2 < 0:
+            screen_center_x = self.width/2
+        if screen_center_y - self.height/2 < 0:
+            screen_center_y = self.height/2
         user_centered = screen_center_x, screen_center_y
 
-        self.camera.move_to(user_centered, panning_fraction)
+        self.camera.position = arcade.math.lerp_2d(
+            self.camera.position,
+            user_centered,
+            panning_fraction,
+        )
 
 
 def main():

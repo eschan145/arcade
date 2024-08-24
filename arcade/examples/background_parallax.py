@@ -14,11 +14,11 @@ python -m arcade.examples.background_parallax
 """
 
 import arcade
-import arcade.background as background
+import arcade.future.background as background
 
 
 SCREEN_TITLE = "Background Group Example"
-SCREEN_WIDTH = 800
+SCREEN_WIDTH = 1280
 
 # How much we'll scale up our pixel art
 PIXEL_SCALE = 3
@@ -29,6 +29,7 @@ SCALED_BG_LAYER_HEIGHT_PX = ORIGINAL_BG_LAYER_HEIGHT_PX * PIXEL_SCALE
 
 
 PLAYER_SPEED = 300  # The player's speed in pixels / second
+CAMERA_SPEED = 0.1
 
 
 class MyGame(arcade.Window):
@@ -38,7 +39,7 @@ class MyGame(arcade.Window):
         # Set the background color to match the sky in the background images
         self.background_color = (162, 84, 162, 255)
 
-        self.camera = arcade.SimpleCamera()
+        self.camera = arcade.camera.Camera2D()
 
         # Create a background group to hold all the landscape's layers
         self.backgrounds = background.ParallaxGroup()
@@ -80,7 +81,7 @@ class MyGame(arcade.Window):
         # Create & position the player sprite in the center of the camera's view
         self.player_sprite = arcade.Sprite(
             ":resources:/images/miami_synth_parallax/car/car-idle.png",
-            center_x=self.camera.viewport_width // 2, scale=PIXEL_SCALE
+            center_x=self.camera.viewport_width // 2, center_y=-200.0, scale=PIXEL_SCALE
         )
         self.player_sprite.bottom = 0
 
@@ -89,8 +90,12 @@ class MyGame(arcade.Window):
 
     def pan_camera_to_player(self):
         # Move the camera toward the center of the player's sprite
-        target_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        self.camera.move_to((target_x, 0.0), 0.1)
+        target_x = self.player_sprite.center_x
+        self.camera.position = arcade.math.lerp_2d(
+            self.camera.position,
+            (target_x, self.height//2),
+            CAMERA_SPEED
+        )
 
     def on_update(self, delta_time: float):
         # Move the player in our infinite world
@@ -109,12 +114,13 @@ class MyGame(arcade.Window):
         # Fake an endless world with scrolling terrain
         # Try experimenting with commenting out 1 or both of the 2 lines
         # below to get an intuitive understanding of what each does!
-        bg.offset = self.camera.position  # Fake depth by moving layers
-        bg.pos = self.camera.position  # Follow the car to fake infinity
+        bg.offset = self.camera.bottom_left  # Fake depth by moving layers
+        bg.pos = self.camera.bottom_left  # Follow the car to fake infinity
 
         # Draw the background & the player's car
+        self.ctx.enable(self.ctx.BLEND)
         bg.draw()
-        self.player_sprite.draw(pixelated=True)
+        arcade.draw_sprite(self.player_sprite, pixelated=True)
 
     def update_car_direction(self):
         """
@@ -147,7 +153,7 @@ class MyGame(arcade.Window):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.camera.resize(width, height)
+        self.camera.match_screen(and_projection=True)
         full_width_size = (width, SCALED_BG_LAYER_HEIGHT_PX)
 
         # We can iterate through a background group,

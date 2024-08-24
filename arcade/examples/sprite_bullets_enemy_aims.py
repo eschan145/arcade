@@ -8,8 +8,8 @@ python -m arcade.examples.sprite_bullets_enemy_aims
 import arcade
 import math
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprites and Bullets Enemy Aims Example"
 BULLET_SPEED = 4
 
@@ -35,18 +35,27 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
 
         # Add player ship
-        self.player = arcade.Sprite(":resources:images/space_shooter/playerShip1_orange.png", scale=0.5)
+        self.player = arcade.Sprite(
+            ":resources:images/space_shooter/playerShip1_orange.png",
+            scale=0.5,
+        )
         self.player_list.append(self.player)
 
         # Add top-left enemy ship
-        enemy = arcade.Sprite(":resources:images/space_shooter/playerShip1_green.png", scale=0.5)
+        enemy = arcade.Sprite(
+            ":resources:images/space_shooter/playerShip1_green.png",
+            scale=0.5,
+        )
         enemy.center_x = 120
         enemy.center_y = SCREEN_HEIGHT - enemy.height
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
         # Add top-right enemy ship
-        enemy = arcade.Sprite(":resources:images/space_shooter/playerShip1_green.png", scale=0.5)
+        enemy = arcade.Sprite(
+            ":resources:images/space_shooter/playerShip1_green.png",
+            scale=0.5,
+        )
         enemy.center_x = SCREEN_WIDTH - 120
         enemy.center_y = SCREEN_HEIGHT - enemy.height
         enemy.angle = 180

@@ -5,13 +5,14 @@ This example is ported from moderngl : https://github.com/moderngl/moderngl/blob
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.tessellation
 """
+
 from array import array
 
 import arcade
 from arcade.gl import BufferDescription
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Bezier Curve Tessellation"
 
 
@@ -21,7 +22,6 @@ class MyGame(arcade.Window):
         """
         Set up the application.
         """
-        self.time = 0
         super().__init__(width, height, title, gl_version=(4, 1))
         self.program = self.ctx.program(
             vertex_shader="""
@@ -80,12 +80,13 @@ class MyGame(arcade.Window):
             void main() {
                 frag_color = vec4(1.0);
             }
-            """
+            """,
         )
 
         # We are processing patches of 4 vertices
         self.ctx.patch_vertices = 4
 
+        # fmt: off
         vertices = array(
             "f",
             # x, y
@@ -96,21 +97,16 @@ class MyGame(arcade.Window):
                 1.0, 0.0,
             ]
         )
-        self.geometry = self.ctx.geometry([
-            BufferDescription(
-                self.ctx.buffer(data=vertices),
-                "2f",
-                ["in_vert"]
-            )
-        ])
+        # fmt: on
+
+        self.geometry = self.ctx.geometry(
+            [BufferDescription(self.ctx.buffer(data=vertices), "2f", ["in_vert"])]
+        )
 
     def on_draw(self):
         self.clear()
         self.program["time"] = self.time
         self.geometry.render(self.program, mode=self.ctx.PATCHES)
-
-    def on_update(self, dt):
-        self.time += dt
 
 
 if __name__ == "__main__":

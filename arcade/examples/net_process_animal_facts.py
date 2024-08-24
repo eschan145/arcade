@@ -48,14 +48,14 @@ class AnimalFacts(arcade.View):
         self.loading = False
         self.text_fact = arcade.Text(
             "",
-            start_x=self.window.width / 2, start_y=self.window.height / 2 + 50,
+            x=self.window.width / 2, y=self.window.height / 2 + 50,
             width=1100, font_size=36, anchor_x="center", anchor_y="center",
             multiline=True,
         )
         self.text_info = arcade.Text(
             "Press SPACE to request new fact",
             font_size=20,
-            start_x=20, start_y=40, color=arcade.color.LIGHT_BLUE,
+            x=20, y=40, color=arcade.color.LIGHT_BLUE,
         )
         self.angle = 0  # Rotation for the spinning loading initicator
         # Keep track of time to auto request new facts
@@ -73,18 +73,17 @@ class AnimalFacts(arcade.View):
 
         # Draw a background image fading between two images if needed
         fade = clamp(time.time() - self.bg_updated_time, 0.0, 1.0)
-        self.draw_background(self.bg_texture_1, int(80 * fade))
+        self.draw_background(self.bg_texture_1, fade * 0.35)
         if fade < 1.0:
-            self.draw_background(self.bg_texture_2, int(80 * (1.0 - fade)))
+            self.draw_background(self.bg_texture_2,  0.35 * (1.0 - fade))
 
         # Draw the fact text
         self.text_fact.draw()
 
         # Draw a spinning circle while we wait for a fact
         if self.loading:
-            arcade.draw_rectangle_filled(
-                center_x=self.window.width - 50, center_y=self.window.height - 50,
-                width=50, height=50,
+            arcade.draw_rect_filled(
+                arcade.XYWH(self.window.width - 50, self.window.height - 50, 50, 50),
                 color=arcade.color.ORANGE,
                 tilt_angle=self.angle,
             )
@@ -106,14 +105,18 @@ class AnimalFacts(arcade.View):
         if texture is None:
             return
 
-        # Get the higest ratio of width or height to fill the window
+        # Get the highest ratio of width or height to fill the window
         scale = max(self.window.width / texture.width, self.window.height / texture.height)
-        texture.draw_sized(
-            center_x=self.window.width / 2,
-            center_y=self.window.height / 2,
-            width=texture.width * scale,
-            height=texture.height * scale,
-            alpha=alpha,
+        arcade.draw_texture_rect(
+            texture,
+            arcade.XYWH(
+                self.window.width / 2,
+                self.window.height / 2,
+                texture.width * scale,
+                texture.height * scale,
+            ),
+            blend=True,
+            alpha=int(alpha * 255),
         )
 
     def on_update(self, delta_time: float):
@@ -217,8 +220,10 @@ class AnimaFactsService:
 
 class Facts:
     """Base class for fact providers"""
+
     def get_fact(self) -> str:
         raise NotImplementedError()
+
     def get_image(self) -> arcade.Texture:
         raise NotImplementedError()
 

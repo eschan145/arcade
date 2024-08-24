@@ -1,13 +1,16 @@
-from typing import List, Optional
-from PIL.Image import Image
+from __future__ import annotations
+
 import pymunk
+from PIL.Image import Image
+from pymunk import Vec2d
 from pymunk.autogeometry import (
     PolylineSet,
     march_soft,
     simplify_curves,
 )
-from pymunk import Vec2d
-from arcade.types import Point, PointList
+
+from arcade.types import Point2, Point2List
+
 from .base import HitBoxAlgorithm
 
 
@@ -18,35 +21,27 @@ class PymunkHitBoxAlgorithm(HitBoxAlgorithm):
     This is a more accurate algorithm generating more points. The
     point count can be controlled with the ``detail`` parameter.
     """
-    name = "pymunk"
+
     #: The default detail when creating a new instance.
     default_detail = 4.5
 
-    def __init__(self, *, detail: Optional[float] = None):
+    def __init__(self, *, detail: float | None = None):
+        super().__init__()
         self.detail = detail or self.default_detail
+        self._cache_name += f"|detail={self.detail}"
 
-    @property
-    def param_str(self) -> str:
-        """
-        Return a string representation of the parameters used to create this algorithm.
-
-        This is used in caching.
-        """
-        return f"detail={self.detail}"
-
-    def __call__(self, *, detail: Optional[float] = None) -> "PymunkHitBoxAlgorithm":
+    def __call__(self, *, detail: float | None = None) -> "PymunkHitBoxAlgorithm":
         """Create a new instance with new default values"""
         return PymunkHitBoxAlgorithm(detail=detail or self.detail)
 
-    def calculate(self, image: Image, detail: Optional[float] = None, **kwargs) -> PointList:
+    def calculate(self, image: Image, detail: float | None = None, **kwargs) -> Point2List:
         """
         Given an RGBA image, this returns points that make up a hit box around it.
 
-        :param Image image: Image get hit box from.
-        :param int detail: How detailed to make the hit box. There's a
-                           trade-off in number of points vs. accuracy.
-
-        :Returns: List of points
+        Args:
+            image: Image get hit box from.
+            detail: How detailed to make the hit box. There's a
+                trade-off in number of points vs. accuracy.
         """
         hit_box_detail = detail or self.detail
 
@@ -56,7 +51,7 @@ class PymunkHitBoxAlgorithm(HitBoxAlgorithm):
         # Trace the image finding all the outlines and holes
         line_sets = self.trace_image(image)
         if len(line_sets) == 0:
-            return tuple()
+            return self.create_bounding_box(image)
 
         # Get the largest line set
         line_set = self.select_largest_line_set(line_sets)
@@ -67,14 +62,15 @@ class PymunkHitBoxAlgorithm(HitBoxAlgorithm):
 
         return self.to_points_list(image, line_set)
 
-    def to_points_list(self, image: Image, line_set: List[Vec2d]) -> PointList:
+    def to_points_list(self, image: Image, line_set: list[Vec2d]) -> Point2List:
         """
         Convert a line set to a list of points.
 
         Coordinates are offset so ``(0,0)`` is the center of the image.
 
-        :param Image image: Image to trace.
-        :param List[Vec2d] line_set: Line set to convert.
+        Args:
+            image: Image to trace.
+            line_set: Line set to convert.
         """
         # Convert to normal points, offset fo 0,0 is center, flip the y
         hh = image.height / 2.0
@@ -102,15 +98,18 @@ class PymunkHitBoxAlgorithm(HitBoxAlgorithm):
         holes in the image. If more than one line set is returned it's important
         to pick the one that covers the most of the image.
 
-        :param Image image: Image to trace.
-        :return: Line sets
+        Args:
+            image: Image to trace.
         """
-        def sample_func(sample_point: Point) -> int:
-            """ Method used to sample image. """
-            if sample_point[0] < 0 \
-                    or sample_point[1] < 0 \
-                    or sample_point[0] >= image.width \
-                    or sample_point[1] >= image.height:
+
+        def sample_func(sample_point: Point2) -> int:
+            """Method used to sample image."""
+            if (
+                sample_point[0] < 0
+                or sample_point[1] < 0
+                or sample_point[0] >= image.width
+                or sample_point[1] >= image.height
+            ):
                 return 0
 
             point_tuple = int(sample_point[0]), int(sample_point[1])
@@ -148,18 +147,14 @@ class PymunkHitBoxAlgorithm(HitBoxAlgorithm):
         # Get back one or more sets of lines covering stuff.
         # We want the one that covers the most of the sprite
         # or the line set might just be a hole in the sprite.
-        return march_soft(
-            logo_bb,
-            horizontal_samples, vertical_samples,
-            99,
-            sample_func)
+        return march_soft(logo_bb, horizontal_samples, vertical_samples, 99, sample_func)
 
-    def select_largest_line_set(self, line_sets: PolylineSet) -> List[Vec2d]:
+    def select_largest_line_set(self, line_sets: PolylineSet) -> list[Vec2d]:
         """
         Given a list of line sets, return the one that covers the most of the image.
 
-        :param PolylineSet line_sets: List of line sets.
-        :return: List of points that make up the line set.
+        Args:
+            line_sets: List of line sets.
         """
         if len(line_sets) == 1:
             return line_sets[0]

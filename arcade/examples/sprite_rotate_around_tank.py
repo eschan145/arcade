@@ -39,8 +39,8 @@ TANK_TURN_SPEED_DEGREES = 70  # How fast the tank's body can turn
 TANK_BARREL_LENGTH_HALF = 15
 
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_MIDDLE = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
 
@@ -64,8 +64,9 @@ class RotatingSprite(arcade.Sprite):
         """
         Rotate the sprite around a point by the set amount of degrees
 
-        :param point: The point that the sprite will rotate about
-        :param degrees: How many degrees to rotate the sprite
+        Args:
+            point: The point that the sprite will rotate about
+            degrees: How many degrees to rotate the sprite
         """
 
         # Make the sprite turn as its position is moved

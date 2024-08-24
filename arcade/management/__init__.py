@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 import shutil
 import sys
@@ -25,14 +27,14 @@ def show_info():
     version_str = f"Arcade {arcade.__version__}"
     print()
     print(version_str)
-    print('-' * len(version_str))
-    print('vendor:', window.ctx.info.VENDOR)
-    print('renderer:', window.ctx.info.RENDERER)
-    print('version:', window.ctx.gl_version)
-    print('python:', sys.version)
-    print('platform:', sys.platform)
-    print('pyglet version:', pyglet.__version__)
-    print('PIL version:', PIL.__version__)
+    print("-" * len(version_str))
+    print("vendor:", window.ctx.info.VENDOR)
+    print("renderer:", window.ctx.info.RENDERER)
+    print("version:", window.ctx.gl_version)
+    print("python:", sys.version)
+    print("platform:", sys.platform)
+    print("pyglet version:", pyglet.version)
+    print("PIL version:", PIL.__version__)
 
 
 def start_project(path_str: str):

@@ -7,12 +7,11 @@ If Python and Arcade are installed, this example can be run from the command lin
 python -m arcade.examples.sprite_moving_platforms
 """
 import arcade
-from pyglet.math import Vec2
 
 SPRITE_SCALING = 0.5
 
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1289
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite with Moving Platforms Example"
 SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * SPRITE_SCALING)
@@ -44,7 +43,7 @@ class MyGame(arcade.Window):
 
         # Drawing non-moving walls separate from moving walls improves performance.
         self.static_wall_list = None
-        self.moving_wall_list = None
+        self.moving_platform_list = None
 
         self.player_list = None
 
@@ -55,8 +54,8 @@ class MyGame(arcade.Window):
 
         # Create the cameras. One for the GUI, one for the sprites.
         # We scroll the 'sprite world' but not the GUI.
-        self.camera_sprites = arcade.SimpleCamera()
-        self.camera_gui = arcade.SimpleCamera()
+        self.camera_sprites = arcade.camera.Camera2D()
+        self.camera_gui = arcade.camera.Camera2D()
 
         self.left_down = False
         self.right_down = False
@@ -66,7 +65,7 @@ class MyGame(arcade.Window):
 
         # Sprite lists
         self.static_wall_list = arcade.SpriteList()
-        self.moving_wall_list = arcade.SpriteList()
+        self.moving_platform_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
 
         # Set up the player
@@ -79,10 +78,10 @@ class MyGame(arcade.Window):
         self.player_list.append(self.player_sprite)
 
         # Create floor
-        for i in range(30):
+        for i in range(50):
             wall = arcade.Sprite(":resources:images/tiles/grassMid.png", scale=SPRITE_SCALING)
             wall.bottom = 0
-            wall.center_x = i * GRID_PIXEL_SIZE
+            wall.center_x = - 1000 + i * GRID_PIXEL_SIZE
             self.static_wall_list.append(wall)
 
         # Create platform side to side
@@ -92,7 +91,7 @@ class MyGame(arcade.Window):
         wall.boundary_left = 2 * GRID_PIXEL_SIZE
         wall.boundary_right = 5 * GRID_PIXEL_SIZE
         wall.change_x = 2 * SPRITE_SCALING
-        self.moving_wall_list.append(wall)
+        self.moving_platform_list.append(wall)
 
         # Create platform side to side
         wall = arcade.Sprite(":resources:images/tiles/grassMid.png", scale=SPRITE_SCALING)
@@ -101,7 +100,7 @@ class MyGame(arcade.Window):
         wall.boundary_left = 5 * GRID_PIXEL_SIZE
         wall.boundary_right = 9 * GRID_PIXEL_SIZE
         wall.change_x = -2 * SPRITE_SCALING
-        self.moving_wall_list.append(wall)
+        self.moving_platform_list.append(wall)
 
         # Create platform moving up and down
         wall = arcade.Sprite(":resources:images/tiles/grassMid.png", scale=SPRITE_SCALING)
@@ -110,7 +109,7 @@ class MyGame(arcade.Window):
         wall.boundary_top = 8 * GRID_PIXEL_SIZE
         wall.boundary_bottom = 4 * GRID_PIXEL_SIZE
         wall.change_y = 2 * SPRITE_SCALING
-        self.moving_wall_list.append(wall)
+        self.moving_platform_list.append(wall)
 
         # Create platform moving diagonally
         wall = arcade.Sprite(":resources:images/tiles/grassMid.png", scale=SPRITE_SCALING)
@@ -122,13 +121,15 @@ class MyGame(arcade.Window):
         wall.boundary_bottom = 4 * GRID_PIXEL_SIZE
         wall.change_x = 2 * SPRITE_SCALING
         wall.change_y = 2 * SPRITE_SCALING
-        self.moving_wall_list.append(wall)
+        self.moving_platform_list.append(wall)
 
         # Create our physics engine
-        self.physics_engine = \
-            arcade.PhysicsEnginePlatformer(self.player_sprite,
-                                           [self.static_wall_list, self.moving_wall_list],
-                                           gravity_constant=GRAVITY)
+        self.physics_engine = arcade.PhysicsEnginePlatformer(
+            self.player_sprite,
+            platforms=self.moving_platform_list,
+            walls=self.static_wall_list,
+            gravity_constant=GRAVITY
+        )
 
         # Set the background color
         self.background_color = arcade.color.AMAZON
@@ -144,19 +145,17 @@ class MyGame(arcade.Window):
         self.clear()
 
         # Select the camera we'll use to draw all our sprites
-        self.camera_sprites.use()
+        with self.camera_sprites.activate():
+            # Draw the sprites
+            self.static_wall_list.draw()
+            self.moving_platform_list.draw()
+            self.player_list.draw()
 
-        # Draw the sprites.
-        self.static_wall_list.draw()
-        self.moving_wall_list.draw()
-        self.player_list.draw()
-
-        self.camera_gui.use()
-
-        # Put the text on the screen.
-        distance = self.player_sprite.right
-        output = f"Distance: {distance}"
-        arcade.draw_text(output, 10, 20, arcade.color.WHITE, 14)
+        # Update & draw our text to the screen
+        with self.camera_gui.activate():
+            distance = self.player_sprite.right
+            output = f"Distance: {distance}"
+            arcade.draw_text(output, 10, 20, arcade.color.WHITE, 14)
 
     def set_x_speed(self):
         if self.left_down and not self.right_down:
@@ -205,9 +204,12 @@ class MyGame(arcade.Window):
         pan.
         """
 
-        position = Vec2(self.player_sprite.center_x - self.width / 2,
-                        self.player_sprite.center_y - self.height / 2)
-        self.camera_sprites.move_to(position, CAMERA_SPEED)
+        position = (self.player_sprite.center_x, self.player_sprite.center_y)
+        self.camera_sprites.position = arcade.math.lerp_2d(
+            self.camera_sprites.position,
+            position,
+            CAMERA_SPEED,
+        )
 
 
 def main():

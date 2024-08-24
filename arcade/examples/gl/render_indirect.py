@@ -19,6 +19,7 @@ or without index buffer.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.render_indirect
 """
+
 from random import (
     randint,
     random,
@@ -53,15 +54,19 @@ class RenderIndirect(arcade.Window):
         # Generate:
         # geometry: Triangles for lots of squares
         # indices: Optional indices for an index buffer
-        # array_draw_commands: List of draw commands for rendering each individual square (without index buffer)
-        # indexed_draw_commands: List of draw commands for rendering each individual square (with index buffer)
-        geometry, indices, array_draw_commands, indexed_draw_commands = self.gen_data(self.num_objects)
+        # array_draw_commands: List of draw commands for rendering each individual
+        # square (without index buffer)
+        # indexed_draw_commands: List of draw commands for rendering each individual
+        # square (with index buffer)
+        geometry, indices, array_draw_commands, indexed_draw_commands = self.gen_data(
+            self.num_objects
+        )
 
         # Crate OpenGL buffers of the data
-        self.draw_command_array_buffer = self.ctx.buffer(data=array('I', array_draw_commands))
-        self.draw_command_indexed_buffer = self.ctx.buffer(data=array('I', indexed_draw_commands))
-        self.vbo = self.ctx.buffer(data=array('f', geometry))
-        self.ibo = self.ctx.buffer(data=array('i', indices))
+        self.draw_command_array_buffer = self.ctx.buffer(data=array("I", array_draw_commands))
+        self.draw_command_indexed_buffer = self.ctx.buffer(data=array("I", indexed_draw_commands))
+        self.vbo = self.ctx.buffer(data=array("f", geometry))
+        self.ibo = self.ctx.buffer(data=array("i", indices))
 
         # Our geometry without index buffer
         self.geometry_array = self.ctx.geometry(
@@ -104,7 +109,7 @@ class RenderIndirect(arcade.Window):
             void main() {
                 fragColor = vec4(color);
             }
-            """
+            """,
         )
 
     def gen_data(self, count):
@@ -117,7 +122,7 @@ class RenderIndirect(arcade.Window):
             # Second triangle
             (0.5, 0.5),  # Top right
             (-0.5, -0.5),  # Bottom left
-            (0.5, -0.5)  # Bottom right
+            (0.5, -0.5),  # Bottom right
         )
 
         geometry = []
@@ -187,6 +192,8 @@ class RenderIndirect(arcade.Window):
         self.clear()
         method = ""
 
+        self.ctx.enable(self.ctx.BLEND)
+
         # Cycle all three rendering methods:
         # * Direct rendering of all quads
         # * Indirectly draw each individual quad (no index buffer)
@@ -223,7 +230,7 @@ class RenderIndirect(arcade.Window):
                 )
 
         # We want to prove by using a query that the following
-        # is identical for all the redering methods:
+        # is identical for all the rendering methods:
         # * The number of pixels written (rgba / 4)
         # * The number of primitives generate
         # We also compare the nanoseconds each methods is using
@@ -235,7 +242,7 @@ class RenderIndirect(arcade.Window):
                 f"[{method}] "
                 f"Pixels written = {self.query.samples_passed // 4}, "
                 f"Primitives Generated = {self.query.primitives_generated}, "
-                f"time = {self.query.time_elapsed / 1_000_000_000 }s"
+                f"time = {self.query.time_elapsed / 1_000_000_000}s"
             )
         )
 

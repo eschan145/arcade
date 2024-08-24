@@ -21,7 +21,7 @@ Note:
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.sections_demo_3
 """
-from typing import Optional
+from __future__ import annotations
 from math import sqrt
 
 import arcade
@@ -74,7 +74,7 @@ class ModalSection(Section):
 
     def draw_button(self):
         # draws the button and button text
-        self.button.draw()
+        arcade.draw_sprite(self.button)
         arcade.draw_text('Close Modal', self.button.left + 5,
                          self.button.bottom + self.button.height / 2,
                          arcade.color.WHITE)
@@ -136,7 +136,7 @@ class Panel(Section):
 
         self.button_show_modal = self.new_button(COLOR_2)
         # to show the key that's actually pressed
-        self.pressed_key: Optional[int] = None
+        self.pressed_key: int | None = None
 
     @staticmethod
     def new_button(color):
@@ -146,15 +146,15 @@ class Panel(Section):
     def draw_button_stop(self):
         arcade.draw_text('Press button to stop the ball', self.left + 10,
                          self.top - 40, COLOR_LIGHT, 10)
-        self.button_stop.draw()
+        arcade.draw_sprite(self.button_stop)
 
     def draw_button_toggle_info_bar(self):
         arcade.draw_text('Press to toggle info_bar', self.left + 10,
                          self.top - 140, COLOR_LIGHT, 10)
-        self.button_toggle_info_bar.draw()
+        arcade.draw_sprite(self.button_toggle_info_bar)
 
     def draw_button_show_modal(self):
-        self.button_show_modal.draw()
+        arcade.draw_sprite(self.button_show_modal)
         arcade.draw_text('Show Modal', self.left - 37 + self.width / 2,
                          self.bottom + 95, COLOR_DARK, 10)
 
@@ -211,7 +211,7 @@ class Map(Section):
         self.sprite_list: arcade.SpriteList = arcade.SpriteList()
         self.sprite_list.append(self.ball)
 
-        self.pressed_key: Optional[int] = None
+        self.pressed_key: int | None = None
 
     def on_update(self, delta_time: float):
 
@@ -260,13 +260,20 @@ class GameView(arcade.View):
 
         # create and store the modal, so we can set
         # self.modal_section.enabled = True to show it
-        self.modal_section = ModalSection((self.window.width / 2) - 150,
-                                          (self.window.height / 2) - 100,
-                                          300, 200)
+        self.modal_section = ModalSection(
+            (self.window.width / 2) - 150,
+            (self.window.height / 2) - 100,
+            300, 200,
+        )
 
         # we set accept_keyboard_events to False (default to True)
-        self.info_bar = InfoBar(0, self.window.height - INFO_BAR_HEIGHT, self.window.width, INFO_BAR_HEIGHT,
-                                accept_keyboard_keys=False)
+        self.info_bar = InfoBar(
+            0,
+            self.window.height - INFO_BAR_HEIGHT,
+            self.window.width,
+            INFO_BAR_HEIGHT,
+            accept_keyboard_keys=False,
+        )
 
         # as prevent_dispatch is on by default, we let pass the events to the
         # following Section: the map
@@ -283,7 +290,7 @@ class GameView(arcade.View):
         self.section_manager.add_section(self.map)
 
     def on_draw(self):
-        arcade.start_render()
+        self.clear()
 
 
 def main():

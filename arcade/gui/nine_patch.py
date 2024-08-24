@@ -1,12 +1,13 @@
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import Optional
 
 import arcade
 import arcade.gl as gl
 
 
 class NinePatchTexture:
-    """
-    Keeps borders & corners at constant widths while stretching the middle.
+    """Keeps borders & corners at constant widths while stretching the middle.
 
     It can be used with new or existing :py:class:`~arcade.gui.UIWidget`
     subclasses wherever an ordinary :py:class:`arcade.Texture` is
@@ -52,28 +53,26 @@ class NinePatchTexture:
     * Areas ``(2)`` and ``(8)`` only stretch horizontally.
     * Areas ``(4)`` and ``(6)`` only stretch vertically.
 
-    :param int left: The width of the left border of the 9-patch
-        (in pixels)
-    :param int right: The width of the right border of the 9-patch
-        (in pixels)
-    :param int bottom: The height of the bottom border of the 9-patch
-        (in pixels)
-    :param int top: The height of the top border of the 9-patch
-        (in pixels)
-    :param Texture texture: The raw texture to use for the 9-patch
-    :param TextureAtlas atlas: Specify an atlas other than arcade's default
-        texture atlas
+    Args:
+        left: The width of the left border of the 9-patch (in pixels)
+        right: The width of the right border of the 9-patch (in pixels)
+        bottom: The height of the bottom border of the 9-patch (in
+            pixels)
+        top: The height of the top border of the 9-patch (in pixels)
+        texture: The raw texture to use for the 9-patch
+        atlas: Specify an atlas other than arcade's default texture
+            atlas
     """
 
     def __init__(
         self,
-        *,
         left: int,
         right: int,
         bottom: int,
         top: int,
         texture: arcade.Texture,
-        atlas: Optional[arcade.TextureAtlas] = None
+        *,
+        atlas: Optional[arcade.DefaultTextureAtlas] = None,
     ):
         self._ctx = arcade.get_window().ctx
 
@@ -93,7 +92,7 @@ class NinePatchTexture:
         # References for the texture
         self._atlas = atlas or self.ctx.default_atlas
         self._texture = texture
-        self._set_texture(texture)
+        self._add_to_atlas(texture)
 
         # pixel texture co-ordinate start and end of central box.
         self._left = left
@@ -115,12 +114,12 @@ class NinePatchTexture:
 
     @texture.setter
     def texture(self, texture: arcade.Texture):
-        self._set_texture(texture)
+        self._texture = texture
+        self._add_to_atlas(texture)
 
     @property
     def program(self) -> gl.program.Program:
-        """
-        Get or set the shader program.
+        """Get or set the shader program.
 
         Returns the default shader if no other shader is assigned.
         """
@@ -130,15 +129,13 @@ class NinePatchTexture:
     def program(self, program: gl.program.Program):
         self._program = program
 
-    def _set_texture(self, texture: arcade.Texture):
-        """
-        Internal method for setting the texture.
+    def _add_to_atlas(self, texture: arcade.Texture):
+        """Internal method for setting the texture.
 
         It ensures the texture is added to the global atlas.
         """
         if not self._atlas.has_texture(texture):
             self._atlas.add(texture)
-        self._texture = texture
 
     @property
     def left(self) -> int:
@@ -177,7 +174,7 @@ class NinePatchTexture:
         self._top = top
 
     @property
-    def size(self) -> Tuple[int, int]:
+    def size(self) -> tuple[int, int]:
         """The size of texture as a width, height tuple in pixels."""
         return self.texture.size
 
@@ -191,44 +188,50 @@ class NinePatchTexture:
         """The height of the texture in pixels."""
         return self.texture.height
 
-    def draw_sized(
+    def draw_rect(
         self,
         *,
-        position: Tuple[float, float] = (0.0, 0.0),
-        size: Tuple[float, float],
-        pixelated: bool = False,
-        **kwargs
+        rect: arcade.types.Rect,
+        pixelated: bool = True,
+        blend: bool = True,
+        **kwargs,
     ):
+        """Draw the 9-patch texture with a specific size.
+
+        Warning:
+            This method assumes the passed dimensions are proper!
+
+            Unexpected behavior may occur if you specify a size
+            smaller than the total size of the border areas.
+
+        Args:
+            rect: Rectangle to draw the 9-patch texture in
+            pixelated: Whether to draw with nearest neighbor
+                interpolation
         """
-        Draw the 9-patch texture with a specific size.
+        if blend:
+            self._ctx.enable_only(self._ctx.BLEND)
+        else:
+            self._ctx.disable(self._ctx.BLEND)
 
-        .. warning:: This method assumes the passed dimensions are proper!
-
-                     Unexpected behavior may occur if you specify a size
-                     smaller than the total size of the border areas.
-
-
-        :param position: Bottom left offset of the texture in pixels
-        :param size: Size of the 9-patch as width, height in pixels
-        :param pixelated: Whether to draw with nearest neighbor interpolation
-        """
-        self.program.set_uniform_safe(
-            "texture_id", self._atlas.get_texture_id(self._texture.atlas_name)
-        )
+        self.program.set_uniform_safe("texture_id", self._atlas.get_texture_id(self._texture))
         if pixelated:
             self._atlas.texture.filter = self._ctx.NEAREST, self._ctx.NEAREST
         else:
             self._atlas.texture.filter = self._ctx.LINEAR, self._ctx.LINEAR
 
-        self.program["position"] = position
+        self.program["position"] = rect.bottom_left
         self.program["start"] = self._left, self._bottom
         self.program["end"] = self.width - self._right, self.height - self._top
-        self.program["size"] = size
+        self.program["size"] = rect.size
         self.program["t_size"] = self._texture.size
 
         self._atlas.use_uv_texture(0)
         self._atlas.texture.use(1)
         self._geometry.render(self._program, vertices=1)
+
+        if blend:
+            self._ctx.disable(self._ctx.BLEND)
 
     def _check_sizes(self):
         """Raise a ValueError if any dimension is invalid."""
@@ -244,8 +247,6 @@ class NinePatchTexture:
 
         # Sanity check texture size
         if self._left + self._right > self._texture.width:
-            raise ValueError(
-                "Left and right border must be smaller than texture width")
+            raise ValueError("Left and right border must be smaller than texture width")
         if self._bottom + self._top > self._texture.height:
-            raise ValueError(
-                "Bottom and top border must be smaller than texture height")
+            raise ValueError("Bottom and top border must be smaller than texture height")

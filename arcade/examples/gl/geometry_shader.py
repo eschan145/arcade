@@ -8,6 +8,7 @@ We generate two triangles on the fly displaying a quad.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.geometry_shader
 """
+
 import random
 from array import array
 import arcade
@@ -25,7 +26,6 @@ class MyGame(arcade.Window):
         """
         Set up the application.
         """
-        self.time = 0
         super().__init__(width, height, title, resizable=True)
         self.program = self.ctx.program(
             vertex_shader="""
@@ -93,24 +93,23 @@ class MyGame(arcade.Window):
             """,
         )
         num_points = 1000
-        self.points = self.ctx.geometry([BufferDescription(
-            self.ctx.buffer(data=array('f', [random.uniform(-1.0, 1.0) for _ in range(num_points * 2)])),
-            '2f',
-            ['in_vert'],
-        )])
+        self.points = self.ctx.geometry(
+            [
+                BufferDescription(
+                    self.ctx.buffer(
+                        data=array("f", [random.uniform(-1.0, 1.0) for _ in range(num_points * 2)])
+                    ),
+                    "2f",
+                    ["in_vert"],
+                )
+            ]
+        )
 
     def on_draw(self):
         self.clear()
-        try:
-            self.program['time'] = self.time
-            self.points.render(self.program, mode=self.ctx.POINTS)
-        except Exception:
-            import traceback
-            traceback.print_exc()
-            exit(1)
-
-    def on_update(self, dt):
-        self.time += dt
+        self.ctx.enable(self.ctx.BLEND)
+        self.program["time"] = self.time
+        self.points.render(self.program, mode=self.ctx.POINTS)
 
 
 if __name__ == "__main__":

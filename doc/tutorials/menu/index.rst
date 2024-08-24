@@ -201,7 +201,7 @@ later why are those parameters needed.
 
 We also need to change accordingly the places where we have used this class i.e
 options and volume ``on_click`` event listener. The layer parameter being set
-1, means that this layer is always drawn on top i.e its the first layer.
+1, means that this layer is always drawn on top i.e.its the first layer.
 
 .. literalinclude:: menu_05.py
     :caption: Editing arguments
@@ -274,10 +274,10 @@ field.
     :caption: Adding toggle button to the layout
     :lines: 217
 
-Adding a Dropdowm
+Adding a Dropdown
 ~~~~~~~~~~~~~~~~~
 
-We add a dropdowm by using ``UIDropdown``.
+We add a dropdown by using ``UIDropdown``.
 
 .. literalinclude:: menu_05.py
     :caption: Adding dropdown

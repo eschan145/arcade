@@ -1,4 +1,3 @@
-# flake8: noqa
 """
 Perspective example using the lower level rendering API.
 
@@ -18,14 +17,14 @@ python -m arcade.examples.perspective
 from array import array
 
 import arcade
-from pyglet.math import Mat4
+from pyglet.math import Mat4, Vec3
 from arcade.gl import BufferDescription
 
 
 class Perspective(arcade.Window):
 
     def __init__(self):
-        super().__init__(800, 600, "Perspective", resizable=True)
+        super().__init__(1280, 720, "Perspective", resizable=True)
         # Simple texture shader for the plane.
         # It support projection and model matrix
         # and a scroll value for texture coordinates
@@ -78,8 +77,8 @@ class Perspective(arcade.Window):
             data=array(
                 'f',
                 [
-                    # x  y   z  u  v 
-                    -1,  1, 0, 0, 1,  # Top Left     
+                    # x  y   z  u  v
+                    -1,  1, 0, 0, 1,  # Top Left
                     -1, -1, 0, 0, 0,  # Bottom Left
                      1,  1, 0, 1, 1,  # Top Right
                      1, -1, 0, 1, 0,  # Bottom right
@@ -103,8 +102,13 @@ class Perspective(arcade.Window):
                         center_x=64 + x * 128,
                         center_y=64 + y * 128,
                     )
-                ) 
-        self.time = 0
+                )
+
+        self.offscreen_cam = arcade.camera.Camera2D(
+            position=(0.0, 0.0),
+            viewport=arcade.LBWH(0, 0, self.fbo.width, self.fbo.height),
+            projection=arcade.LRBT(0, self.fbo.width, 0, self.fbo.height)
+        )
 
     def on_draw(self):
         # Every frame we can update the offscreen texture if needed
@@ -116,8 +120,8 @@ class Perspective(arcade.Window):
         self.fbo.color_attachments[0].use(unit=0)
 
         # Move the plane into camera view and rotate it
-        translate = Mat4.from_translation((0, 0, -2))
-        rotate = Mat4.from_rotation(self.time / 2, (1, 0, 0))
+        translate = Mat4.from_translation(Vec3(0, 0, -2))
+        rotate = Mat4.from_rotation(self.time / 2, Vec3(1, 0, 0))
         self.program["model"] = translate @ rotate
 
         # Scroll the texture coordinates
@@ -126,20 +130,24 @@ class Perspective(arcade.Window):
         # Draw the plane
         self.geometry.render(self.program)
 
-    def on_update(self, delta_time: float):
-        self.time += delta_time
-
     def draw_offscreen(self):
         """Render into the texture mapped """
         # Activate the offscreen framebuffer and draw the sprites into it
         with self.fbo.activate() as fbo:
             fbo.clear()
-            arcade.set_viewport(0, self.fbo.width, 0, self.fbo.height)
+            self.offscreen_cam.use()
             self.spritelist.draw()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.program["projection"] = Mat4.perspective_projection(self.aspect_ratio, 0.1, 100, fov=75)
+        self.program["projection"] = Mat4.perspective_projection(
+            self.aspect_ratio, 0.1, 100, fov=75,
+        )
 
 
-Perspective().run()
+def main():
+    Perspective().run()
+
+
+if __name__ == "__main__":
+    main()

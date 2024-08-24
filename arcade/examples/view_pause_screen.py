@@ -13,8 +13,8 @@ python -m arcade.examples.view_pause_screen
 
 import arcade
 
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1280
+HEIGHT = 720
 SPRITE_SCALING = 0.5
 
 
@@ -37,11 +37,13 @@ class MenuView(arcade.View):
 class GameView(arcade.View):
     def __init__(self):
         super().__init__()
-        self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
-                                           scale=SPRITE_SCALING)
+        self.player_sprite = arcade.Sprite(
+            ":resources:images/animated_characters/female_person/femalePerson_idle.png",
+            scale=SPRITE_SCALING,
+        )
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
-        self.player_sprite.velocity = [3, 3]
+        self.player_sprite.velocity = 3, 3
 
     def on_show_view(self):
         self.window.background_color = arcade.color.AMAZON
@@ -49,11 +51,11 @@ class GameView(arcade.View):
     def on_draw(self):
         self.clear()
         # Draw all the sprites.
-        self.player_sprite.draw()
+        arcade.draw_sprite(self.player_sprite)
 
         # Show tip to pause screen
         arcade.draw_text("Press Esc. to pause",
-                         WIDTH / 2,
+                         WIDTH // 2,
                          HEIGHT - 100,
                          arcade.color.BLACK,
                          font_size=20,
@@ -91,7 +93,7 @@ class PauseView(arcade.View):
         # The previous View (GameView) was passed in
         # and saved in self.game_view.
         player_sprite = self.game_view.player_sprite
-        player_sprite.draw()
+        arcade.draw_sprite(player_sprite)
 
         # draw an orange filter over him
         arcade.draw_lrbt_rectangle_filled(left=player_sprite.left,

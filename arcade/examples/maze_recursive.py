@@ -36,6 +36,16 @@ MAZE_WIDTH = 51
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
 VIEWPORT_MARGIN = 200
+HORIZONTAL_BOUNDARY = SCREEN_WIDTH / 2.0 - VIEWPORT_MARGIN
+VERTICAL_BOUNDARY = SCREEN_HEIGHT / 2.0 - VIEWPORT_MARGIN
+# If the player moves further than this boundary away from the
+# camera we use a constraint to move the camera
+CAMERA_BOUNDARY = arcade.LRBT(
+    -HORIZONTAL_BOUNDARY,
+    HORIZONTAL_BOUNDARY,
+    -VERTICAL_BOUNDARY,
+    VERTICAL_BOUNDARY,
+)
 
 MERGE_SPRITES = True
 
@@ -155,9 +165,8 @@ class MyGame(arcade.Window):
         # Physics engine
         self.physics_engine = None
 
-        # Used to scroll
-        self.view_bottom = 0
-        self.view_left = 0
+        # camera for scrolling
+        self.camera = None
 
         # Time to process
         self.processing_time = 0
@@ -205,7 +214,10 @@ class MyGame(arcade.Window):
                     column_count = end_column - start_column + 1
                     column_mid = (start_column + end_column) / 2
 
-                    wall = arcade.Sprite(":resources:images/tiles/grassCenter.png", scale=SPRITE_SCALING)
+                    wall = arcade.Sprite(
+                        ":resources:images/tiles/grassCenter.png",
+                        scale=SPRITE_SCALING,
+                    )
                     wall.center_x = column_mid * SPRITE_SIZE + SPRITE_SIZE / 2
                     wall.center_y = row * SPRITE_SIZE + SPRITE_SIZE / 2
                     wall.width = SPRITE_SIZE * column_count
@@ -236,10 +248,8 @@ class MyGame(arcade.Window):
         # Set the background color
         self.background_color = arcade.color.AMAZON
 
-        # Set the viewport boundaries
-        # These numbers set where we have 'scrolled' to.
-        self.view_left = 0
-        self.view_bottom = 0
+        # setup camera
+        self.camera = arcade.camera.Camera2D()
 
     def on_draw(self):
         """ Render the screen. """
@@ -258,21 +268,22 @@ class MyGame(arcade.Window):
         sprite_count = len(self.wall_list)
 
         output = f"Sprite Count: {sprite_count}"
+        left, bottom = self.camera.bottom_left
         arcade.draw_text(output,
-                         self.view_left + 20,
-                         SCREEN_HEIGHT - 20 + self.view_bottom,
+                         left + 20,
+                         SCREEN_HEIGHT - 20 + bottom,
                          arcade.color.WHITE, 16)
 
         output = f"Drawing time: {self.draw_time:.3f}"
         arcade.draw_text(output,
-                         self.view_left + 20,
-                         SCREEN_HEIGHT - 40 + self.view_bottom,
+                         left + 20,
+                         SCREEN_HEIGHT - 40 + bottom,
                          arcade.color.WHITE, 16)
 
         output = f"Processing time: {self.processing_time:.3f}"
         arcade.draw_text(output,
-                         self.view_left + 20,
-                         SCREEN_HEIGHT - 60 + self.view_bottom,
+                         left + 20,
+                         SCREEN_HEIGHT - 60 + bottom,
                          arcade.color.WHITE, 16)
 
         self.draw_time = timeit.default_timer() - draw_start_time
@@ -307,40 +318,10 @@ class MyGame(arcade.Window):
         self.physics_engine.update()
 
         # --- Manage Scrolling ---
-
-        # Track if we need to change the viewport
-
-        changed = False
-
-        # Scroll left
-        left_bndry = self.view_left + VIEWPORT_MARGIN
-        if self.player_sprite.left < left_bndry:
-            self.view_left -= left_bndry - self.player_sprite.left
-            changed = True
-
-        # Scroll right
-        right_bndry = self.view_left + SCREEN_WIDTH - VIEWPORT_MARGIN
-        if self.player_sprite.right > right_bndry:
-            self.view_left += self.player_sprite.right - right_bndry
-            changed = True
-
-        # Scroll up
-        top_bndry = self.view_bottom + SCREEN_HEIGHT - VIEWPORT_MARGIN
-        if self.player_sprite.top > top_bndry:
-            self.view_bottom += self.player_sprite.top - top_bndry
-            changed = True
-
-        # Scroll down
-        bottom_bndry = self.view_bottom + VIEWPORT_MARGIN
-        if self.player_sprite.bottom < bottom_bndry:
-            self.view_bottom -= bottom_bndry - self.player_sprite.bottom
-            changed = True
-
-        if changed:
-            arcade.set_viewport(self.view_left,
-                                SCREEN_WIDTH + self.view_left,
-                                self.view_bottom,
-                                SCREEN_HEIGHT + self.view_bottom)
+        self.camera.position = arcade.camera.grips.constrain_boundary_xy(
+            self.camera.view_data, CAMERA_BOUNDARY, self.player_sprite.position
+        )
+        self.camera.use()
 
         # Save the time it took to do this.
         self.processing_time = timeit.default_timer() - start_time

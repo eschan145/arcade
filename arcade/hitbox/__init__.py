@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from PIL.Image import Image
 
-from arcade.types import PointList
+from arcade.types import Point2List
 
 from .base import HitBox, HitBoxAlgorithm, RotatableHitBox
 from .bounding_box import BoundingHitBoxAlgorithm
@@ -18,14 +20,13 @@ algo_default = algo_simple
 
 
 # Temporary functions for backwards compatibility
-def calculate_hit_box_points_simple(image: Image, *args) -> PointList:
+def calculate_hit_box_points_simple(image: Image, *args) -> Point2List:
     """
     Given an RGBA image, this returns points that make up a hit box around it. Attempts
     to trim out transparent pixels.
 
-    :param Image image: Image get hit box from.
-
-    :Returns: List of points
+    Args:
+        image: Image get hit box from.
     """
     return algo_simple.calculate(image)
 
@@ -33,16 +34,17 @@ def calculate_hit_box_points_simple(image: Image, *args) -> PointList:
 def calculate_hit_box_points_detailed(
     image: Image,
     hit_box_detail: float = 4.5,
-) -> PointList:
+) -> Point2List:
     """
     Given an RGBA image, this returns points that make up a hit box around it. Attempts
     to trim out transparent pixels.
 
-    :param Image image: Image get hit box from.
-    :param int hit_box_detail: How detailed to make the hit box. There's a
-                               trade-off in number of points vs. accuracy.
-
-    :Returns: List of points
+    Args:
+        image:
+            Image get hit box from.
+        hit_box_detail:
+            How detailed to make the hit box. There's a
+            trade-off in number of points vs. accuracy.
     """
     return algo_detailed.calculate(image, detail=hit_box_detail)
 

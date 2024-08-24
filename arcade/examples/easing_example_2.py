@@ -9,21 +9,22 @@ https://easings.net/
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.easing_example_2
 """
+
 import arcade
 from arcade import easing
 
-SPRITE_SCALING = 0.5
+SPRITE_SCALING = 1.0
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Easing Example"
 
 
 class Player(arcade.Sprite):
-    """ Player class """
+    """Player class"""
 
     def __init__(self, image, scale):
-        """ Set up the player """
+        """Set up the player"""
 
         # Call the parent init
         super().__init__(image, scale=scale)
@@ -32,7 +33,7 @@ class Player(arcade.Sprite):
         self.easing_x_data = None
         self.easing_y_data = None
 
-    def on_update(self, delta_time: float = 1 / 60):
+    def update(self, delta_time: float = 1 / 60):
         if self.easing_angle_data is not None:
             done, self.angle = easing.ease_angle_update(self.easing_angle_data, delta_time)
             if done:
@@ -50,40 +51,35 @@ class Player(arcade.Sprite):
 
 
 class MyGame(arcade.Window):
-    """ Main application class. """
+    """Main application class."""
 
     def __init__(self, width, height, title):
-        """ Initializer """
+        """Initializer"""
 
         # Call the parent class initializer
         super().__init__(width, height, title)
 
-        # Variables that will hold sprite lists
-        self.player_list = None
-
         # Set up the player info
-        self.player_sprite = None
-
-        # Set the background color
-        self.background_color = arcade.color.BLACK
-        self.text = "Press 1-9 to apply an easing function."
-
-    def setup(self):
-        """ Set up the game and initialize the variables. """
-
-        # Sprite lists
         self.player_list = arcade.SpriteList()
 
+        # Load the player texture. The ship points up by default. We need it to point right.
+        # That's why we rotate it 90 degrees clockwise.
+        texture = arcade.load_texture(":resources:images/space_shooter/playerShip1_orange.png")
+        texture = texture.rotate_90()
+
         # Set up the player
-        self.player_sprite = Player(":resources:images/space_shooter/playerShip1_orange.png",
-                                    SPRITE_SCALING)
+        self.player_sprite = Player(texture, SPRITE_SCALING)
         self.player_sprite.angle = 0
         self.player_sprite.center_x = SCREEN_WIDTH / 2
         self.player_sprite.center_y = SCREEN_HEIGHT / 2
         self.player_list.append(self.player_sprite)
 
+        # Set the background color
+        self.background_color = arcade.color.BLACK
+        self.text = "Move the mouse and press 1-9 to apply an easing function."
+
     def on_draw(self):
-        """ Render the screen. """
+        """Render the screen."""
 
         # This command has to happen before we start drawing
         self.clear()
@@ -91,27 +87,29 @@ class MyGame(arcade.Window):
         # Draw all the sprites.
         self.player_list.draw()
 
-        arcade.draw_text(self.text, 10, 10, arcade.color.WHITE, 18)
+        arcade.draw_text(self.text, 15, 15, arcade.color.WHITE, 24)
 
     def on_update(self, delta_time):
-        """ Movement and game logic """
+        """Movement and game logic"""
 
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
-        self.player_list.on_update(delta_time)
+        self.player_list.update(delta_time)
 
     def on_key_press(self, key, modifiers):
         x = self.mouse["x"]
         y = self.mouse["y"]
 
         if key == arcade.key.KEY_1:
-            point = x, y
-            self.player_sprite.face_point(point)
+            angle = arcade.math.get_angle_degrees(
+                x1=self.player_sprite.position[0], y1=self.player_sprite.position[1], x2=x, y2=y
+            )
+            self.player_sprite.angle = angle
             self.text = "Instant angle change"
         if key in [arcade.key.KEY_2, arcade.key.KEY_3, arcade.key.KEY_4, arcade.key.KEY_5]:
             p1 = self.player_sprite.position
             p2 = (x, y)
-            end_angle = -arcade.get_angle_degrees(p1[0], p1[1], p2[0], p2[1])
+            end_angle = arcade.math.get_angle_degrees(p1[0], p1[1], p2[0], p2[1])
             start_angle = self.player_sprite.angle
             if key == arcade.key.KEY_2:
                 ease_function = easing.linear
@@ -128,10 +126,9 @@ class MyGame(arcade.Window):
             else:
                 raise ValueError("?")
 
-            self.player_sprite.easing_angle_data = easing.ease_angle(start_angle,
-                                                                     end_angle,
-                                                                     rate=180,
-                                                                     ease_function=ease_function)
+            self.player_sprite.easing_angle_data = easing.ease_angle(
+                start_angle, end_angle, rate=180, ease_function=ease_function
+            )
 
         if key in [arcade.key.KEY_6, arcade.key.KEY_7, arcade.key.KEY_8, arcade.key.KEY_9]:
             p1 = self.player_sprite.position
@@ -156,14 +153,16 @@ class MyGame(arcade.Window):
             self.player_sprite.easing_y_data = ey
 
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-        self.player_sprite.face_point((x, y))
+        angle = arcade.math.get_angle_degrees(
+            x1=self.player_sprite.position[0], y1=self.player_sprite.position[1], x2=x, y2=y
+        )
+        self.player_sprite.angle = angle
 
 
 def main():
-    """ Main function """
+    """Main function"""
     window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.setup()
-    arcade.run()
+    window.run()
 
 
 if __name__ == "__main__":

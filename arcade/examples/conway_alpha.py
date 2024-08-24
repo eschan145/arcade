@@ -105,11 +105,22 @@ class MyGame(arcade.Window):
         self.cur_layer = 0
         randomize_grid(self.layers_grid_sprites_one_dim[0])
 
+    def reset(self):
+        """ Reset the grid """
+        randomize_grid(self.layers_grid_sprites_one_dim[0])
+
     def on_draw(self):
         """ Render the screen. """
         # Clear all pixels in the window
         self.clear()
         self.layers_grid_sprites_one_dim[0].draw()
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        """ Handle key press events """
+        if symbol == arcade.key.SPACE:
+            self.reset()
+        elif symbol == arcade.key.ESCAPE:
+            self.close()
 
     def on_update(self, delta_time: float):
         """ Update the grid """
@@ -164,17 +175,22 @@ class MyGame(arcade.Window):
 
                 Any live cell with two or three live neighbours survives.
                 Any dead cell with three live neighbours becomes a live cell.
-                All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+                All other live cells die in the next generation. Similarly,
+                all other dead cells stay dead.
                 """
-                if layer1[row][column].alpha == ALPHA_ON and (live_neighbors == 2 or live_neighbors == 3):
-                    if layer2[row][column].alpha == ALPHA_OFF:
-                        layer2[row][column].alpha = ALPHA_ON
-                elif layer1[row][column].alpha == ALPHA_OFF and live_neighbors == 3:
-                    if layer2[row][column].alpha == ALPHA_OFF:
-                        layer2[row][column].alpha = ALPHA_ON
+                # Shortcut the cell sprites
+                l1_sprite = layer1[row][column]
+                l2_sprite = layer2[row][column]
+
+                if l1_sprite.alpha == ALPHA_ON and (live_neighbors == 2 or live_neighbors == 3):
+                    if l2_sprite.alpha == ALPHA_OFF:
+                        l2_sprite.alpha = ALPHA_ON
+                elif l1_sprite.alpha == ALPHA_OFF and live_neighbors == 3:
+                    if l2_sprite.alpha == ALPHA_OFF:
+                        l2_sprite.alpha = ALPHA_ON
                 else:
-                    if layer2[row][column].alpha == ALPHA_ON:
-                        layer2[row][column].alpha = ALPHA_OFF
+                    if l2_sprite.alpha == ALPHA_ON:
+                        l2_sprite.alpha = ALPHA_OFF
 
 
 def main():

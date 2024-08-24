@@ -3,19 +3,29 @@
 from: https://github.com/linuxlewis/tripy/blob/master/tripy.py
 """
 
-from arcade.types import Point, PointList
-from typing import List, Tuple
+from __future__ import annotations
+
+from arcade.types import Point2, Point2List
 
 
-def earclip(polygon: PointList) -> List[Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]]:
+def earclip(
+    polygon: Point2List,
+) -> list[tuple[tuple[float, float], tuple[float, float], tuple[float, float]]]:
     """
     Simple earclipping algorithm for a given polygon p.
+
     polygon is expected to be an array of 2-tuples of the cartesian points of the polygon
     For a polygon with n points it will return n-2 triangles.
-    The triangles are returned as an array of 3-tuples where each item in the tuple is a 2-tuple of the cartesian point.
+    The triangles are returned as an array of 3-tuples where each item in the tuple is a
+    2-tuple of the cartesian point.
 
     Implementation Reference:
-        - https://www.geometrictools.com/Documentation/TriangulationByEarClipping.pdf
+    https://www.geometrictools.com/Documentation/TriangulationByEarClipping.pdf
+
+    Args:
+        polygon: List of points in the polygon.
+    Returns:
+        A clipped polygon.
     """
     ear_vertex = []
     triangles = []
@@ -46,7 +56,9 @@ def earclip(polygon: PointList) -> List[Tuple[Tuple[float, float], Tuple[float, 
 
         polygon.remove(ear)
         point_count -= 1
-        triangles.append(((prev_point[0], prev_point[1]), (ear[0], ear[1]), (next_point[0], next_point[1])))
+        triangles.append(
+            ((prev_point[0], prev_point[1]), (ear[0], ear[1]), (next_point[0], next_point[1]))
+        )
         if point_count > 3:
             prev_prev_point = polygon[prev_index - 1]
             next_next_index = (i + 1) % point_count
@@ -54,7 +66,7 @@ def earclip(polygon: PointList) -> List[Tuple[Tuple[float, float], Tuple[float, 
 
             groups = [
                 (prev_prev_point, prev_point, next_point, polygon),
-                (prev_point, next_point, next_next_point, polygon)
+                (prev_point, next_point, next_next_point, polygon),
             ]
             for group in groups:
                 p = group[1]
@@ -66,7 +78,8 @@ def earclip(polygon: PointList) -> List[Tuple[Tuple[float, float], Tuple[float, 
     return triangles
 
 
-def _is_clockwise(polygon: List[Point]):
+def _is_clockwise(polygon: Point2List) -> bool:
+    """Check if the polygon is clockwise."""
     s = 0.0
     polygon_count = len(polygon)
     for i in range(polygon_count):
@@ -76,17 +89,20 @@ def _is_clockwise(polygon: List[Point]):
     return s > 0
 
 
-def _is_convex(prev: Point, point: Point, next_point: Point):
+def _is_convex(prev: Point2, point: Point2, next_point: Point2) -> bool:
+    """Check if the polygon is convex."""
     return _triangle_sum(prev[0], prev[1], point[0], point[1], next_point[0], next_point[1]) < 0
 
 
-def _is_ear(p1: Point, p2: Point, p3: Point, polygon: List[Point]):
-    return _contains_no_points(p1, p2, p3, polygon) and \
-        _is_convex(p1, p2, p3) and \
-        _triangle_area(p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]) > 0
+def _is_ear(p1: Point2, p2: Point2, p3: Point2, polygon: Point2List) -> bool:
+    return (
+        _contains_no_points(p1, p2, p3, polygon)
+        and _is_convex(p1, p2, p3)
+        and _triangle_area(p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]) > 0
+    )
 
 
-def _contains_no_points(p1: Point, p2: Point, p3: Point, polygon: List[Point]):
+def _contains_no_points(p1: Point2, p2: Point2, p3: Point2, polygon: Point2List) -> bool:
     for pn in polygon:
         if pn in (p1, p2, p3):
             continue
@@ -95,7 +111,7 @@ def _contains_no_points(p1: Point, p2: Point, p3: Point, polygon: List[Point]):
     return True
 
 
-def _is_point_inside(p: Point, a: Point, b: Point, c: Point):
+def _is_point_inside(p: Point2, a: Point2, b: Point2, c: Point2) -> bool:
     area = _triangle_area(a[0], a[1], b[0], b[1], c[0], c[1])
     area1 = _triangle_area(p[0], p[1], b[0], b[1], c[0], c[1])
     area2 = _triangle_area(p[0], p[1], a[0], a[1], c[0], c[1])

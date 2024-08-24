@@ -20,12 +20,13 @@ use a Query to count how many results the shader gave us.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.spritelist_interaction_visualize_dist_los_trans
 """
+
 import random
 import struct
 import arcade
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 NUM_COINS = 500
 NUM_WALLS = 100
 INTERACTION_RADIUS = 200
@@ -192,8 +193,9 @@ class SpriteListInteraction(arcade.Window):
             num_sprites_found = self.query.primitives_generated
             if num_sprites_found > 0:
                 print(f"We found {num_sprites_found} sprite(s)")
-                # Transfer the the data from the vram into python and decode the values into python objects.
-                # We read num_sprites_found float values from the result buffer and convert those into python floats
+                # Transfer the the data from the vram into python and decode the
+                # values into python objects. We read num_sprites_found float
+                # values from the result buffer and convert those into python floats
                 sprite_indices = struct.unpack(
                     f"{num_sprites_found}f",
                     self.result_buffer.read(size=num_sprites_found * 4),
@@ -213,10 +215,15 @@ class SpriteListInteraction(arcade.Window):
 
         self.walls.draw()
         self.coins.draw()
-        self.player.draw()
+        arcade.draw_sprite(self.player)
 
         # Visualize the interaction radius
-        arcade.draw_circle_filled(self.player.center_x, self.player.center_y, INTERACTION_RADIUS, (255, 255, 255, 64))
+        arcade.draw_circle_filled(
+            center_x=self.player.center_x,
+            center_y=self.player.center_y,
+            radius=INTERACTION_RADIUS,
+            color=(255, 255, 255, 64)
+        )
 
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
         # Move the sprite to mouse position

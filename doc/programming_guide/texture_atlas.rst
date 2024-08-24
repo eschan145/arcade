@@ -9,7 +9,7 @@ Texture Atlas
 Introduction
 ------------
 
-:py:class:`arcade.TextureAtlas` is where your textures eventually end up
+:py:class:`arcade.DefaultTextureAtlas` is where your textures eventually end up
 when they are used in a sprite. This is where the image data is moved
 to graphics memory (OpenGL) and is one of the reasons we can
 batch draw hundreds of thousands of sprites extremely fast.
@@ -51,7 +51,7 @@ height.
 Default Texture Atlas
 ---------------------
 
-Most users will not be aware that arcade is using a texture
+Most users will not be aware that Arcade is using a texture
 atlas under the hood. More advanced users can take advantage
 of these if they run into limitations.
 
@@ -71,7 +71,7 @@ This atlas can also be shared between several sprite lists if needed.
 .. code:: python
 
     # Create an empty 256 x 256 texture atlas
-    my_atlas = TextureAtlas((256, 256))
+    my_atlas = DefaultTextureAtlas((256, 256))
     spritelist = SpriteList(atlas=my_atlas)
 
 When new textures are detected (sprite is added to list) the texture is
@@ -86,11 +86,8 @@ adding a large amount of them it can be noticeable.
     # List of arcade.Texture instances
     list_of_textures = ...
 
-    # Create an atlas with a reasonable size for a list of textures
-    atlas = TextureAtlas.create_from_texture_sequence(list_of_textures)
-
     # Create an atlas with a specific size and initial textures
-    atlas = TextureAtlas((256, 256), textures=list_of_textures)
+    atlas = DefaultTextureAtlas((256, 256), textures=list_of_textures)
 
     # We can also pre-add textures at any time using:
     # (can also be done with the default texture atlas)
@@ -136,7 +133,7 @@ If you have stale textures they can be removed from the atlas using::
     atlas.remove(texture)
 
 This will make the region free for new textures the next time the
-atlas rebuilds. You can also call :py:meth:`arcade.TextureAtlas.rebuild`
+atlas rebuilds. You can also call :py:meth:`arcade.DefaultTextureAtlas.rebuild`
 directly if you are removing a large quantity of textures, but generally
 it's enough to let this happen automatically when needed.
 
@@ -169,7 +166,7 @@ or in any case you need the sprite texture to be really dynamic
     with spritelist.atlas.render_into(texture) as framebuffer:
         # Clear the allocated region in the atlas (if you need it)
         framebuffer.clear()
-        # From here on we can draw using any arcade draw functionality
+        # From here on we can draw using any Arcade draw functionality
         arcade.draw_rectangle_filled(128, 128, 160, 160, arcade.color.WHITE, rotation)
 
     # Draw the spritelist and see your animating sprite texture
@@ -210,11 +207,11 @@ Debugging
 When working with atlases it can be useful to see the contents.
 We provide two methods for this.
 
-:py:meth:`arcade.TextureAtlas.show` will display the atlas using Pillow::
+:py:meth:`arcade.DefaultTextureAtlas.show` will display the atlas using Pillow::
 
     atlas.show()
 
-:py:meth:`arcade.TextureAtlas.save` will save the atlas contents to a png file::
+:py:meth:`arcade.DefaultTextureAtlas.save` will save the atlas contents to a png file::
 
     atlas.write("path/to/atlas.png")
 

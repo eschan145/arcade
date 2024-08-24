@@ -9,8 +9,8 @@ python -m arcade.examples.starting_template
 """
 import arcade
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Starting Template"
 
 
@@ -31,9 +31,9 @@ class MyGame(arcade.Window):
         # If you have sprite lists, you should create them here,
         # and set them to None
 
-    def setup(self):
-        """ Set up the game variables. Call to re-start the game. """
-        # Create your sprites and sprite lists here
+    def reset(self):
+        """Reset the game to the initial state."""
+        # Do changes needed to restart the game here if you want to support that
         pass
 
     def on_draw(self):
@@ -92,8 +92,7 @@ class MyGame(arcade.Window):
 def main():
     """ Main function """
     game = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    game.setup()
-    arcade.run()
+    game.run()
 
 
 if __name__ == "__main__":

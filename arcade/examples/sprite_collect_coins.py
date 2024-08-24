@@ -15,11 +15,11 @@ import arcade
 
 # --- Constants ---
 SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_COIN = .25
+SPRITE_SCALING_COIN = 0.4
 COIN_COUNT = 50
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite Collect Coins Example"
 
 
@@ -57,7 +57,7 @@ class MyGame(arcade.Window):
         # Reset the score and the score display
         self.score = 0
         self.score_display = arcade.Text(
-            text="Score: 0", start_x=10, start_y=20,
+            text="Score: 0", x=10, y=20,
             color=arcade.color.WHITE, font_size=14)
 
         # Set up the player

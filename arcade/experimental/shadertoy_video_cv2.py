@@ -5,9 +5,13 @@ Dependencies:
     pip install opencv-python
 
 """
+
+from __future__ import annotations
+
+import cv2  # type: ignore
+
 import arcade
 from arcade.experimental.shadertoy import Shadertoy
-import cv2  # type: ignore
 
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 300
@@ -17,7 +21,9 @@ SCREEN_TITLE = "ShaderToy Video"
 class ShadertoyVideo(arcade.View):
     """
     Can be used to add effects like rain to the background of the game.
-    Make sure to inherit this view and call super for `__init__`, `on_draw`, `on_update` and `on_resize`.
+
+    Make sure to inherit this view and call super for `__init__`,
+    `on_draw`, `on_update` and `on_resize`.
     """
 
     def __init__(self, path: str):
@@ -41,7 +47,7 @@ class ShadertoyVideo(arcade.View):
                 }
             """,
         )
-        self.video = cv2.VideoCapture(str(arcade.resources.resolve_resource_path(path)))
+        self.video = cv2.VideoCapture(str(arcade.resources.resolve(path)))
         width, height = (
             int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)),
             int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)),

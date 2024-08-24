@@ -12,7 +12,7 @@ python -m arcade.examples.background_groups
 """
 
 import arcade
-import arcade.background as background
+import arcade.future.background as background
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -20,6 +20,7 @@ SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Background Group Example"
 
 PLAYER_SPEED = 300
+CAMERA_SPEED = 0.5
 
 
 class MyGame(arcade.Window):
@@ -28,14 +29,15 @@ class MyGame(arcade.Window):
         # Set the background color to equal to that of the first background.
         self.background_color = (5, 44, 70)
 
-        self.camera = arcade.SimpleCamera()
+        self.camera = arcade.camera.Camera2D()
 
         # create a background group which will hold all the backgrounds.
         self.backgrounds = background.BackgroundGroup()
 
         # Add each background from a file.
-        # It is important to note that the scale only impacts the texture and not the background.
-        # This means we need to ensure the background size is also scaled correctly.
+        # It is important to note that the scale only impacts the texture
+        # and not the background. This means we need to ensure the background
+        # size is also scaled correctly.
         self.backgrounds.add_from_file(
             ":resources:/images/cybercity_background/far-buildings.png",
             (0.0, 240.0),
@@ -66,21 +68,23 @@ class MyGame(arcade.Window):
 
     def pan_camera_to_player(self):
         # This will center the camera on the player.
-        target_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        target_y = self.player_sprite.center_y - (self.camera.viewport_height / 2)
+        target_x = self.player_sprite.center_x
+        target_y = self.player_sprite.center_y
 
         # This ensures the background is almost always at least partially visible.
-        if -self.camera.viewport_width / 2 > target_x:
-            target_x = -self.camera.viewport_width / 2
-        elif target_x > 1.5 * self.camera.viewport_width:
-            target_x = 1.5 * self.camera.viewport_width
+        if 0.0 > target_x:
+            target_x = 0.0
+        elif target_x > 2.0 * self.camera.viewport_width:
+            target_x = 2.0 * self.camera.viewport_width
 
-        if -self.camera.viewport_height / 2 > target_y:
-            target_y = -self.camera.viewport_height / 2
-        elif target_y > 1.5 * self.camera.viewport_height:
-            target_y = 1.5 * self.camera.viewport_height
+        if 0.0 > target_y:
+            target_y = 0.0
+        elif target_y > 2.0 * self.camera.viewport_height:
+            target_y = 2.0 * self.camera.viewport_height
 
-        self.camera.move_to((target_x, target_y), 0.1)
+        self.camera.position = arcade.math.lerp_2d(
+            self.camera.position, (target_x, target_y), CAMERA_SPEED,
+        )
 
     def on_update(self, delta_time: float):
         new_position = (
@@ -96,32 +100,39 @@ class MyGame(arcade.Window):
 
         self.camera.use()
 
+        self.ctx.enable(self.ctx.BLEND)
         self.backgrounds.draw()
-        self.player_sprite.draw()
+        self.ctx.disable(self.ctx.BLEND)
+
+        arcade.draw_sprite(self.player_sprite)
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if symbol == arcade.key.LEFT:
+        # Support arrow keys and ASWD
+        if symbol in (arcade.key.LEFT, arcade.key.A):
             self.x_direction -= PLAYER_SPEED
-        elif symbol == arcade.key.RIGHT:
+        elif symbol in (arcade.key.RIGHT, arcade.key.D):
             self.x_direction += PLAYER_SPEED
-        elif symbol == arcade.key.DOWN:
+        elif symbol in (arcade.key.DOWN, arcade.key.S):
             self.y_direction -= PLAYER_SPEED
-        elif symbol == arcade.key.UP:
+        elif symbol in (arcade.key.UP, arcade.key.W):
             self.y_direction += PLAYER_SPEED
+        # Close the window if the user presses escape
+        elif symbol == arcade.key.ESCAPE:
+            self.close()
 
     def on_key_release(self, symbol: int, modifiers: int):
-        if symbol == arcade.key.LEFT:
+        if symbol in (arcade.key.LEFT, arcade.key.A):
             self.x_direction += PLAYER_SPEED
-        elif symbol == arcade.key.RIGHT:
+        elif symbol in (arcade.key.RIGHT, arcade.key.D):
             self.x_direction -= PLAYER_SPEED
-        elif symbol == arcade.key.DOWN:
+        elif symbol in (arcade.key.DOWN, arcade.key.S):
             self.y_direction += PLAYER_SPEED
-        elif symbol == arcade.key.UP:
+        elif symbol in (arcade.key.UP, arcade.key.W):
             self.y_direction -= PLAYER_SPEED
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.camera.resize(width, height)
+        self.camera.match_screen(and_projection=True)
 
 
 def main():

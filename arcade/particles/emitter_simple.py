@@ -1,28 +1,34 @@
 """
 Convenience functions that provide a much simpler interface to Emitters and Particles.
 
-These trade away some flexibility in favor of simplicity to allow beginners to start using particle systems.
+These trade away some flexibility in favor of simplicity to allow beginners
+to start using particle systems.
 """
-import random
 
-from typing import Sequence, Type
-from arcade.types import Point, PathOrTexture
+from __future__ import annotations
+
+import random
+from typing import Sequence
+
 from arcade.math import rand_in_circle, rand_on_circle
-from .particle import LifetimeParticle, FadeParticle
-from .emitter import Emitter, EmitBurst, EmitterIntervalWithTime
+from arcade.types import PathOrTexture, Point
+
+from .emitter import EmitBurst, Emitter, EmitterIntervalWithTime
+from .particle import FadeParticle, LifetimeParticle
 
 
 def make_burst_emitter(
-        center_xy: Point,
-        filenames_and_textures: Sequence[PathOrTexture],
-        particle_count: int,
-        particle_speed: float,
-        particle_lifetime_min: float,
-        particle_lifetime_max: float,
-        particle_scale: float = 1.0,
-        fade_particles: bool = True):
+    center_xy: Point,
+    filenames_and_textures: Sequence[PathOrTexture],
+    particle_count: int,
+    particle_speed: float,
+    particle_lifetime_min: float,
+    particle_lifetime_max: float,
+    particle_scale: float = 1.0,
+    fade_particles: bool = True,
+) -> Emitter:
     """Returns an emitter that emits all of its particles at once"""
-    particle_factory: Type[LifetimeParticle] = LifetimeParticle
+    particle_factory: type[LifetimeParticle] = LifetimeParticle
     if fade_particles:
         particle_factory = FadeParticle
     return Emitter(
@@ -32,23 +38,24 @@ def make_burst_emitter(
             filename_or_texture=random.choice(filenames_and_textures),
             change_xy=rand_in_circle((0.0, 0.0), particle_speed),
             lifetime=random.uniform(particle_lifetime_min, particle_lifetime_max),
-            scale=particle_scale
-        )
+            scale=particle_scale,
+        ),
     )
 
 
 def make_interval_emitter(
-        center_xy: Point,
-        filenames_and_textures: Sequence[PathOrTexture],
-        emit_interval: float,
-        emit_duration: float,
-        particle_speed: float,
-        particle_lifetime_min: float,
-        particle_lifetime_max: float,
-        particle_scale: float = 1.0,
-        fade_particles: bool = True):
+    center_xy: Point,
+    filenames_and_textures: Sequence[PathOrTexture],
+    emit_interval: float,
+    emit_duration: float,
+    particle_speed: float,
+    particle_lifetime_min: float,
+    particle_lifetime_max: float,
+    particle_scale: float = 1.0,
+    fade_particles: bool = True,
+) -> Emitter:
     """Returns an emitter that emits its particles at a constant rate for a given amount of time"""
-    particle_factory: Type[LifetimeParticle] = LifetimeParticle
+    particle_factory: type[LifetimeParticle] = LifetimeParticle
     if fade_particles:
         particle_factory = FadeParticle
     return Emitter(
@@ -58,6 +65,6 @@ def make_interval_emitter(
             filename_or_texture=random.choice(filenames_and_textures),
             change_xy=rand_on_circle((0.0, 0.0), particle_speed),
             lifetime=random.uniform(particle_lifetime_min, particle_lifetime_max),
-            scale=particle_scale
-        )
+            scale=particle_scale,
+        ),
     )

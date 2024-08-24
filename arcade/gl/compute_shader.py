@@ -1,8 +1,21 @@
-from typing import TYPE_CHECKING, Dict, Tuple, Union
-from ctypes import c_char, cast, byref, POINTER, c_char_p, pointer, c_int, create_string_buffer, c_buffer
+from __future__ import annotations
+
 import weakref
+from ctypes import (
+    POINTER,
+    byref,
+    c_buffer,
+    c_char,
+    c_char_p,
+    c_int,
+    cast,
+    create_string_buffer,
+    pointer,
+)
+from typing import TYPE_CHECKING
 
 from pyglet import gl
+
 from .uniform import Uniform, UniformBlock
 
 if TYPE_CHECKING:
@@ -12,12 +25,18 @@ if TYPE_CHECKING:
 class ComputeShader:
     """
     A higher level wrapper for an OpenGL compute shader.
+
+    Args:
+        ctx:
+            The context this shader belongs to.
+        glsl_source:
+            The GLSL source code for the compute shader.
     """
 
-    def __init__(self, ctx: "Context", glsl_source: str) -> None:
+    def __init__(self, ctx: Context, glsl_source: str) -> None:
         self._ctx = ctx
         self._source = glsl_source
-        self._uniforms: Dict[str, Union[UniformBlock, Uniform]] = dict()
+        self._uniforms: dict[str, UniformBlock | Uniform] = dict()
 
         from arcade.gl import ShaderException
 
@@ -51,7 +70,7 @@ class ComputeShader:
                     f"---- [compute shader] ---\n"
                 )
                 + "\n".join(
-                    f"{str(i+1).zfill(3)}: {line} "
+                    f"{str(i + 1).zfill(3)}: {line} "
                     for i, line in enumerate(self._source.split("\n"))
                 )
             )
@@ -82,7 +101,7 @@ class ComputeShader:
         """The name/id of the OpenGL resource"""
         return self._glo
 
-    def use(self):
+    def _use(self) -> None:
         """
         Use/activate the compute shader.
 
@@ -92,7 +111,7 @@ class ComputeShader:
             since ``run()`` already does this for you.
         """
         gl.glUseProgram(self._glo)
-        # self._ctx.active_program = self
+        self._ctx.active_program = self
 
     def run(self, group_x=1, group_y=1, group_z=1) -> None:
         """
@@ -115,14 +134,15 @@ class ComputeShader:
         a size for a dimension or uses ``1`` as size you don't have to supply
         this parameter.
 
-        :param int group_x: The number of work groups to be launched in the X dimension.
-        :param int group_y: The number of work groups to be launched in the y dimension.
-        :param int group_z: The number of work groups to be launched in the z dimension.
+        Args:
+            group_x: The number of work groups to be launched in the X dimension.
+            group_y: The number of work groups to be launched in the y dimension.
+            group_z: The number of work groups to be launched in the z dimension.
         """
-        self.use()
+        self._use()
         gl.glDispatchCompute(group_x, group_y, group_z)
 
-    def __getitem__(self, item) -> Union[Uniform, UniformBlock]:
+    def __getitem__(self, item) -> Uniform | UniformBlock:
         """Get a uniform or uniform block"""
         try:
             uniform = self._uniforms[item]
@@ -151,18 +171,25 @@ class ComputeShader:
         if self._ctx.gc_mode == "context_gc" and self._glo > 0:
             self._ctx.objects.append(self)
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Destroy the internal compute shader object.
+
         This is normally not necessary, but depends on the
-        garbage collection more configured in the context.
+        garbage collection configured in the context.
         """
         ComputeShader.delete_glo(self._ctx, self._glo)
         self._glo = 0
 
     @staticmethod
     def delete_glo(ctx, prog_id):
-        """Low level method for destroying a compute shader by id"""
+        """
+        Low level method for destroying a compute shader by id.
+
+        Args:
+            ctx: The context this program belongs to.
+            prog_id: The OpenGL id of the program.
+        """
         # Check to see if the context was already cleaned up from program
         # shut down. If so, we don't need to delete the shaders.
         if gl.current_context is None:
@@ -198,9 +225,7 @@ class ComputeShader:
     def _introspect_uniform_blocks(self):
         """Finds uniform blocks and maps the to python objectss"""
         active_uniform_blocks = gl.GLint(0)
-        gl.glGetProgramiv(
-            self._glo, gl.GL_ACTIVE_UNIFORM_BLOCKS, byref(active_uniform_blocks)
-        )
+        gl.glGetProgramiv(self._glo, gl.GL_ACTIVE_UNIFORM_BLOCKS, byref(active_uniform_blocks))
         # print('GL_ACTIVE_UNIFORM_BLOCKS', active_uniform_blocks)
 
         for loc in range(active_uniform_blocks.value):
@@ -208,7 +233,7 @@ class ComputeShader:
             block = UniformBlock(self._glo, index, size, name)
             self._uniforms[name] = block
 
-    def _query_uniform(self, location: int) -> Tuple[str, int, int]:
+    def _query_uniform(self, location: int) -> tuple[str, int, int]:
         """Retrieve Uniform information at given location.
 
         Returns the name, the type as a GLenum (GL_FLOAT, ...) and the size. Size is
@@ -230,7 +255,7 @@ class ComputeShader:
         )
         return u_name.value.decode(), u_type.value, u_size.value
 
-    def _query_uniform_block(self, location: int) -> Tuple[int, int, str]:
+    def _query_uniform_block(self, location: int) -> tuple[int, int, str]:
         """Query active uniform block by retrieving the name and index and size"""
         # Query name
         u_size = gl.GLint()
@@ -247,7 +272,5 @@ class ComputeShader:
         index = gl.glGetUniformBlockIndex(self._glo, u_name)
         # Query size
         b_size = gl.GLint()
-        gl.glGetActiveUniformBlockiv(
-            self._glo, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE, b_size
-        )
+        gl.glGetActiveUniformBlockiv(self._glo, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE, b_size)
         return index, b_size.value, u_name.value.decode()

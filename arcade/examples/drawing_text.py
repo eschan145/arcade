@@ -12,6 +12,9 @@ SCREEN_TITLE = "Drawing Text Example"
 DEFAULT_LINE_HEIGHT = 45
 DEFAULT_FONT_SIZE = 20
 
+# Load fonts bumbled with arcade such as the Kenney fonts
+arcade.resources.load_system_fonts()
+
 
 class MyGame(arcade.Window):
     """
@@ -256,6 +259,11 @@ class MyGame(arcade.Window):
                          anchor_x="center",
                          anchor_y="center",
                          rotation=self.text_angle)
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        """ Handle key press events """
+        if symbol == arcade.key.ESCAPE:
+            self.close()
 
 
 def main():

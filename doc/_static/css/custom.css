@@ -4,50 +4,123 @@ body {
 /* TOC - Main landing page */
 /* Show two columns if screen is wide enough */
 @media screen and (min-width: 700px) {
+    /* For regular items */
     .toctree-wrapper > ul {
         columns: 2;
     }
+    /* For Social and Learning Resources sections */
+    .toc-outside-links {
+        columns: 2;
+    }
 }
-.toctree-l1 {
-    margin-left: 5px;
+
+
+/* Wrap individual main page items for easier group manipulation
+ of contents and images. See PR #2027 for main page css changes */
+.main-page-item-wrapper {
+    align-items: flex-start;
+    display: flex;
+    margin: 10px;
 }
-.toc-outside-links {
-    margin-left: 35px;
+.main-page-item-wrapper > .toctree-wrapper {
+    width: 100%;
 }
-.toc-outside-links ul {
-    columns: 2;
+
+/* single-col-box for items on main page with 2 bullet points, use if
+ wanting to avoid having 2 columns with 1 item each inside */
+.main-page-item-wrapper > .single-col-box {
+    width: 100%;
 }
-.toc-outside-links li p, .toc-outside-links ul li {
-    margin-left: 5px;
+.main-page-item-wrapper > .single-col-box ul {
+    columns: 1;
 }
-.toc-outside-links a {
-    text-decoration: none;
+
+/* For Social and Learning Resources to make
+title + list appear like other categories */
+.main-page-item-wrapper > .main-page-item-sub-wrapper {
+    display: flex;
+    flex-direction: column;
+    margin: 0px;
+    width: 100%;
 }
-.toctree-wrapper a {
-    text-decoration: none;
+.main-page-item-wrapper > .main-page-item-title {
+    width: 100%;
 }
-.toc-outside-links a:hover {
-    text-decoration: underline;
+.main-page-item-title > p {
+    font-size: var(--font-size--small);
+    margin-bottom: 0;
+    text-align: initial;
+    text-transform: uppercase;
 }
-.toctree-wrapper a:hover {
-    text-decoration: underline;
+.main-page-item-sub-wrapper > .toc-outside-links {
+    margin-left: 0px;
+    width: 100%;
 }
-#the-python-arcade-library h2 {
+
+/* Wrappers and formatting for sprinter, START HERE, github star button
+to align them neatly */
+.main-page-item-wrapper-header {
+    align-items: center;
+    display: flex;
+    margin: 10px;
+}
+.main-page-box {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.main-page-box > .main-page-link {
+    display: flex;
+    width: 100%;
+}
+.main-page-box > .main-page-link a {
+    display: flex;
+}
+.sprinter-box {
+    margin-left: 10px;
+    height: 55px;
+    display: flex;
+}
+.start-here-box {
+    align-items: center;
+    display: flex;
+    margin-left: -10px;
+}
+/* #the-python-arcade-library h2 {
     font-size: var(--font-size--small);
     font-weight: 400;
     margin-bottom: 0;
     margin-top: .5rem;
     text-align: initial;
     text-transform: uppercase;
+    width: 100%;
+    display: flex;
+} */
+.main-page-box > .main-page-box-gh {
+    display: flex;
+    align-items: center;
+    margin-right: 0px;
+}
+#github-stars {
+    width: 141px;
+    height: 30px;
+    margin-bottom: -9px;
+}
+
+/* Formatting for list items */
+.toctree-l1 {
+    margin-left: 5px;
+}
+.toctree-wrapper a {
+    text-decoration: none;
+}
+.toctree-wrapper a:hover {
+    text-decoration: underline;
 }
 #the-python-arcade-library ul {
     margin-top: 0;
     margin-bottom: 0;
-}
-#github-stars {
-    width: 170px;
-    height: 30px;
-    margin-bottom: -18px;
 }
 .heading-icon {
     columns: 2;
@@ -82,31 +155,11 @@ body {
 }
 /* Right side image, for longer text */
 img.right-image {
-   float: right;
-   margin-left: 8px;
-   margin-bottom: 4px;
-   margin-top: 10px;
-}
-.section-header {
-    display: flex;
-}
-.section-logo-div {
-    display: block;
-    width: 80px;
-}
-.section-title {
-    display: block;
-}
-.section-title h2 {
-    margin-top: 0.25em;
-}
-.section-logo {
-    width: 78px;
-    padding-right: 15px;
-}
-.main-page-table {
-    width: 100%;
-}
+    float: right;
+    margin-left: 8px;
+    margin-bottom: 4px;
+    margin-top: 10px;
+ }
 .vimeo-video {
     border: 0;
     position:absolute;
@@ -114,6 +167,11 @@ img.right-image {
     left:0;
     width:100%;
     height:100%;
+}
+/* Make signatures look nice */
+.sig:not(.sig-inline) {
+    /* Highlight even when not hovering */
+    background: var(--color-api-background-hover);
 }
 /* Make Function API look nice */
 .sig-param .n:first-of-type {
@@ -168,4 +226,74 @@ body:not([data-theme="light"]) .highlight .c1 {
 }
 .highlight .c1 {
     color: #007507;
+}
+
+/* Color tables */
+.checkered {
+    background-image: url(../checkered.png);
+    background-repeat: repeat;
+    margin:0px;
+    padding: 0px;
+}
+
+/* Change font for headers and title*/
+@font-face {
+    font-family: 'Josefin Sans';
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/josefinsans/v32/Qw3aZQNVED7rKGKxtqIqX5EUDXx4.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.rst-content .toctree-wrapper>p.caption,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+legend {
+  font-family:"Josefin Sans", Arial, Helvetica, sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.rst-content h1 {
+    font-weight: 600;
+}
+
+.rst-content h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 500;
+}
+
+.icon-home, .wy-nav-top a {
+  font-weight: 500;
+  font-family:"Josefin Sans", Arial, Helvetica, sans-serif;
+  font-size: larger;
+  letter-spacing: -0.5px;
+}
+
+
+/*
+ * Override grid for field list. We want things stacked vertically.
+ */
+html.writer-html5 .rst-content dl.field-list {
+    display: block;
+}
+
+
+/*
+ * Make all tip/hint/warning boxes rounder
+ */
+.rst-content .admonition {
+    border-radius: 4px;
+}
+.rst-content .admonition-title {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding-top: 8px;
 }

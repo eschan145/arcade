@@ -8,20 +8,31 @@ python -m arcade.examples.astar_pathfinding
 """
 
 import arcade
+from arcade import camera
 import random
 
 SPRITE_IMAGE_SIZE = 128
 SPRITE_SCALING = 0.25
 SPRITE_SIZE = int(SPRITE_IMAGE_SIZE * SPRITE_SCALING)
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "A-Star Path-finding"
 
 MOVEMENT_SPEED = 5
 
 VIEWPORT_MARGIN = 100
+HORIZONTAL_BOUNDARY = SCREEN_WIDTH / 2.0 - VIEWPORT_MARGIN
+VERTICAL_BOUNDARY = SCREEN_HEIGHT / 2.0 - VIEWPORT_MARGIN
 
+# If the player moves further than this boundary away from the camera we use a
+# constraint to move the camera
+CAMERA_BOUNDARY = arcade.LRBT(
+    -HORIZONTAL_BOUNDARY,
+    HORIZONTAL_BOUNDARY,
+    -VERTICAL_BOUNDARY,
+    VERTICAL_BOUNDARY,
+)
 
 class MyGame(arcade.Window):
     """
@@ -58,12 +69,11 @@ class MyGame(arcade.Window):
         # List of points we checked to see if there is a barrier there
         self.barrier_list = None
 
-        # Used in scrolling
-        self.view_bottom = 0
-        self.view_left = 0
-
         # Set the window background color
         self.background_color = arcade.color.AMAZON
+
+        # Camera
+        self.camera = None
 
     def setup(self):
         """ Set up the game and initialize the variables. """
@@ -140,10 +150,14 @@ class MyGame(arcade.Window):
                                                     playing_field_bottom_boundary,
                                                     playing_field_top_boundary)
 
+        self.camera = camera.Camera2D()
+
     def on_draw(self):
         """
         Render the screen.
         """
+        self.camera.use()
+
         # This command has to happen before we start drawing
         self.clear()
 
@@ -185,71 +199,35 @@ class MyGame(arcade.Window):
         # print(self.path,"->", self.player.position)
 
         # --- Manage Scrolling ---
-
-        # Keep track of if we changed the boundary. We don't want to call the
-        # set_viewport command if we didn't change the view port.
-        changed = False
-
-        # Scroll left
-        left_boundary = self.view_left + VIEWPORT_MARGIN
-        if self.player.left < left_boundary:
-            self.view_left -= left_boundary - self.player.left
-            changed = True
-
-        # Scroll right
-        right_boundary = self.view_left + SCREEN_WIDTH - VIEWPORT_MARGIN
-        if self.player.right > right_boundary:
-            self.view_left += self.player.right - right_boundary
-            changed = True
-
-        # Scroll up
-        top_boundary = self.view_bottom + SCREEN_HEIGHT - VIEWPORT_MARGIN
-        if self.player.top > top_boundary:
-            self.view_bottom += self.player.top - top_boundary
-            changed = True
-
-        # Scroll down
-        bottom_boundary = self.view_bottom + VIEWPORT_MARGIN
-        if self.player.bottom < bottom_boundary:
-            self.view_bottom -= bottom_boundary - self.player.bottom
-            changed = True
-
-        # Make sure our boundaries are integer values. While the view port does
-        # support floating point numbers, for this application we want every pixel
-        # in the view port to map directly onto a pixel on the screen. We don't want
-        # any rounding errors.
-        self.view_left = int(self.view_left)
-        self.view_bottom = int(self.view_bottom)
-
-        # If we changed the boundary values, update the view port to match
-        if changed:
-            arcade.set_viewport(self.view_left,
-                                SCREEN_WIDTH + self.view_left,
-                                self.view_bottom,
-                                SCREEN_HEIGHT + self.view_bottom)
+        self.camera.position = camera.grips.constrain_boundary_xy(
+            self.camera.view_data, CAMERA_BOUNDARY, self.player.position
+        )
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
-        if key == arcade.key.UP:
+        if key in (arcade.key.UP, arcade.key.W):
             self.up_pressed = True
-        elif key == arcade.key.DOWN:
+        elif key in (arcade.key.DOWN, arcade.key.S):
             self.down_pressed = True
-        elif key == arcade.key.LEFT:
+        elif key in (arcade.key.LEFT, arcade.key.A):
             self.left_pressed = True
-        elif key == arcade.key.RIGHT:
+        elif key in (arcade.key.RIGHT, arcade.key.D):
             self.right_pressed = True
+        # Close the window / exit game
+        elif key == arcade.key.ESCAPE:
+            self.close()
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
-        if key == arcade.key.UP:
+        if key in (arcade.key.UP, arcade.key.W):
             self.up_pressed = False
-        elif key == arcade.key.DOWN:
+        elif key in (arcade.key.DOWN, arcade.key.S):
             self.down_pressed = False
-        elif key == arcade.key.LEFT:
+        elif key in (arcade.key.LEFT, arcade.key.A):
             self.left_pressed = False
-        elif key == arcade.key.RIGHT:
+        elif key in (arcade.key.RIGHT, arcade.key.D):
             self.right_pressed = False
 
 

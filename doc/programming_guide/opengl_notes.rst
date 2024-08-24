@@ -1,7 +1,7 @@
 .. _open_gl_notes:
 
-OpenGL Notes
-============
+OpenGL
+======
 
 Arcade is using OpenGL for the underlying rendering. OpenGL
 functionality is given to use through pyglet when a window
@@ -21,7 +21,7 @@ to make this as painless as possible for the user.
 :py:class:`~arcade.SpriteList` can for example be built before window creation
 and will be initialized internally in the first draw call.
 
-:py:class:`~arcade.TextureAtlas` on the other hand cannot
+:py:class:`~arcade.DefaultTextureAtlas` on the other hand cannot
 be crated before the window is created, but :py:class:`~arcade.Texture`
 can freely be loaded at any time since these only manage
 pixel data with Pillow and calculate hit box data on the cpu.
@@ -96,15 +96,15 @@ first ``draw()`` call or ``initialize()`` is called.
 .. _prog-guide-gl-buffer-protocol-typing:
 
 Writing Raw Bytes to GL Buffers & Textures
------------------------------------------------------------
+------------------------------------------
 
-Many of arcade's OpenGL classes support creation from or writing to
+Many of Arcade's OpenGL classes support creation from or writing to
 any object that supports the
 `buffer protocol <https://docs.python.org/3/c-api/buffer.html>`_.
 The classes most useful to end users are:
 
 * :py:meth:`arcade.gl.Buffer <arcade.gl.Buffer.write>`
-* :py:meth:`arcade.gl.Texture <arcade.gl.Texture.write>`
+* :py:meth:`arcade.gl.Texture2D <arcade.gl.Texture2D.write>`
 
 This functionality can be used for displaying the results of
 calculations such as:
@@ -125,7 +125,7 @@ annotations for buffer protocol objects until
 `version 3.12 at the earliest <https://peps.python.org/pep-0688/>`_.
 
 In the meantime, there are workarounds for users who want to write to
-arcade's GL objects from third-party buffer protocol objects:
+Arcade's GL objects from third-party buffer protocol objects:
 
 * use the `typing.cast <https://docs.python.org/3/library/typing.html#typing.cast>`_
   method to convert the object's type for the linter

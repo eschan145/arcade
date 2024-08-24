@@ -1,4 +1,5 @@
 import pytest
+
 import arcade
 
 
@@ -183,10 +184,14 @@ def test_check_for_collision_with_list(window):
             sprite.position = x * 50, y * 50
             sl.append(sprite)
 
-    with pytest.raises(TypeError):
-        arcade.check_for_collision_with_list("moo", sl)
-    with pytest.raises(TypeError):
-        arcade.check_for_collision_with_list(a, "moo")
+    # There's no good way to perform this test with arcade-accelerate enabled.
+    # It causes a very different exception that without the inclusion of pyo3
+    # into Arcade would be next to impossible to test for in a sane way.
+    if not window.using_accelerate:
+        with pytest.raises(TypeError):
+            arcade.check_for_collision_with_list("moo", sl)
+        with pytest.raises(TypeError):
+            arcade.check_for_collision_with_list(a, "moo")
 
     a.position = 100, 100
     assert len(arcade.check_for_collision_with_list(a, sl)) == 1
@@ -213,8 +218,12 @@ def test_check_for_collision_with_lists(window):
             sl.append(sprite)
             sls.append(sl)
 
-    with pytest.raises(TypeError):
-        arcade.check_for_collision_with_lists("moo", sl)
+    # There's no good way to perform this test with arcade-accelerate enabled.
+    # It causes a very different exception that without the inclusion of pyo3
+    # into Arcade would be next to impossible to test for in a sane way.
+    if not window.using_accelerate:
+        with pytest.raises(TypeError):
+            arcade.check_for_collision_with_lists("moo", sl)
 
     a.position = 100, 100
     assert len(arcade.check_for_collision_with_lists(a, sls)) == 1
@@ -294,9 +303,9 @@ def test_get_sprites_in_rect(use_spatial_hash):
     sp.extend((a, b, c, d))
 
     with pytest.raises(TypeError):
-        arcade.get_sprites_in_rect((0, 0, 10, 10), "moo")
+        arcade.get_sprites_in_rect(arcade.LRBT(0, 0, 10, 10), "moo")
 
-    assert set(arcade.get_sprites_in_rect((-50, 50, -50, 50), sp)) == set([a, b, c, d])
-    assert set(arcade.get_sprites_in_rect((100, 200, 100, 200), sp)) == set()
-    assert set(arcade.get_sprites_in_rect((-100, 0, -100, 0), sp)) == set([b, d])
-    assert set(arcade.get_sprites_in_rect((100, 0, 100, 0), sp)) == set([a, c])
+    assert set(arcade.get_sprites_in_rect(arcade.LRBT(-50, 50, -50, 50), sp)) == {a, b, c, d}
+    assert set(arcade.get_sprites_in_rect(arcade.LRBT(100, 200, 100, 200), sp)) == set()
+    assert set(arcade.get_sprites_in_rect(arcade.LRBT(-100, 0, -100, 0), sp)) == {b, d}
+    assert set(arcade.get_sprites_in_rect(arcade.LRBT(100, 0, 100, 0), sp)) == {a, c}

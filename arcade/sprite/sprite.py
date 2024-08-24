@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
-from arcade import Texture, load_texture
+import arcade
+from arcade import Texture
 from arcade.hitbox import HitBox, RotatableHitBox
-from arcade.math import get_angle_degrees
 from arcade.texture import get_default_texture
-from arcade.types import PathOrTexture, Point
+from arcade.types import PathOrTexture, Point2
 
 from .base import BasicSprite
 from .mixins import PymunkMixin
@@ -34,13 +36,19 @@ class Sprite(BasicSprite, PymunkMixin):
 
     .. tip:: Advanced users should see :py:class:`~arcade.BasicSprite`
 
-             It uses fewer resources at the cost of having fewer features.
+        It uses fewer resources at the cost of having fewer features.
 
-    :param str path_or_texture: Path to an image file, or a texture object.
-    :param float center_x: Location of the sprite in pixels.
-    :param float center_y: Location of the sprite in pixels.
-    :param float scale: Show the image at this many times its original size.
-    :param float angle: The initial rotation of the sprite in degrees
+    Args:
+        path_or_texture:
+            Path to an image file, or a texture object.
+        center_x:
+            Location of the sprite in pixels.
+        center_y:
+            Location of the sprite in pixels.
+        scale:
+            Show the image at this many times its original size.
+        angle:
+            The initial rotation of the sprite in degrees
     """
 
     __slots__ = (
@@ -55,25 +63,24 @@ class Sprite(BasicSprite, PymunkMixin):
         "cur_texture_index",
         "_hit_box",
         "physics_engines",
-        "_sprite_list",
         "guid",
         "force",
     )
 
     def __init__(
         self,
-        path_or_texture: PathOrTexture = None,
+        path_or_texture: PathOrTexture | None = None,
         scale: float = 1.0,
         center_x: float = 0.0,
         center_y: float = 0.0,
         angle: float = 0.0,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         if isinstance(path_or_texture, Texture):
             _texture = path_or_texture
             _textures = [_texture]
         elif isinstance(path_or_texture, (str, Path)):
-            _texture = load_texture(path_or_texture)
+            _texture = arcade.texture.default_texture_cache.load_or_get_texture(path_or_texture)
             _textures = [_texture]
         else:
             _texture = get_default_texture()
@@ -94,28 +101,54 @@ class Sprite(BasicSprite, PymunkMixin):
         # Movement
         self._velocity = 0.0, 0.0
         self.change_angle: float = 0.0
+        """Change in angle per 1/60th of a second."""
 
         # Custom sprite properties
-        self._properties: Optional[Dict[str, Any]] = None
+        self._properties: dict[str, Any] | None = None
 
         # Boundaries for moving platforms in tilemaps
-        self.boundary_left: Optional[float] = None
-        self.boundary_right: Optional[float] = None
-        self.boundary_top: Optional[float] = None
-        self.boundary_bottom: Optional[float] = None
+        self.boundary_left: float | None = None
+        """
+        :py:class:`~arcade.physics_engines.PhysicsEnginePlatformer`
+        uses this as the left boundary for moving
+        :py:attr:`~arcade.physics_engines.PhysicsEnginePlatformer.platforms`.
+        """
+
+        self.boundary_right: float | None = None
+        """
+        :py:class:`~arcade.physics_engines.PhysicsEnginePlatformer`
+        uses this as the right boundary for moving
+        :py:attr:`~arcade.physics_engines.PhysicsEnginePlatformer.platforms`.
+        """
+
+        self.boundary_top: float | None = None
+        """
+        :py:class:`~arcade.physics_engines.PhysicsEnginePlatformer`
+        uses this as the top boundary for moving
+        :py:attr:`~arcade.physics_engines.PhysicsEnginePlatformer.platforms`.
+        """
+
+        self.boundary_bottom: float | None = None
+        """
+        :py:class:`~arcade.physics_engines.PhysicsEnginePlatformer`
+        uses this as the top boundary for moving
+        :py:attr:`~arcade.physics_engines.PhysicsEnginePlatformer.platforms`.
+        """
 
         self.cur_texture_index: int = 0
-        self.textures: List[Texture] = _textures
+        """Current texture index for sprite animation."""
+        self.textures: list[Texture] = _textures
+        """List of textures stored in the sprite."""
 
-        self.physics_engines: List[Any] = []
+        self.physics_engines: list[Any] = []
+        """List of physics engines that have registered this sprite."""
 
-        self._sprite_list: Optional[SpriteList] = None
+        self._sprite_list: SpriteList | None = None
         # Debug properties
-        self.guid: Optional[str] = None
+        self.guid: str | None = None
+        """A unique id for debugging purposes."""
 
-        self._hit_box: RotatableHitBox = self._hit_box.create_rotatable(
-            angle=self._angle
-        )
+        self._hit_box: RotatableHitBox = self._hit_box.create_rotatable(angle=self._angle)
 
         self._width = self._texture.width * scale
         self._height = self._texture.height * scale
@@ -132,7 +165,7 @@ class Sprite(BasicSprite, PymunkMixin):
         return self._angle
 
     @angle.setter
-    def angle(self, new_value: float):
+    def angle(self, new_value: float) -> None:
         if new_value == self._angle:
             return
 
@@ -154,11 +187,11 @@ class Sprite(BasicSprite, PymunkMixin):
         return self._angle / 180.0 * math.pi
 
     @radians.setter
-    def radians(self, new_value: float):
+    def radians(self, new_value: float) -> None:
         self.angle = new_value * 180.0 / math.pi
 
     @property
-    def velocity(self) -> Point:
+    def velocity(self) -> Point2:
         """
         Get or set the velocity of the sprite.
 
@@ -168,14 +201,11 @@ class Sprite(BasicSprite, PymunkMixin):
         Example::
 
             sprite.velocity = 1.0, 0.0
-
-        Returns:
-            Tuple[float, float]
         """
         return self._velocity
 
     @velocity.setter
-    def velocity(self, new_value: Point):
+    def velocity(self, new_value: Point2) -> None:
         self._velocity = new_value
 
     @property
@@ -184,7 +214,7 @@ class Sprite(BasicSprite, PymunkMixin):
         return self.velocity[0]
 
     @change_x.setter
-    def change_x(self, new_value: float):
+    def change_x(self, new_value: float) -> None:
         self._velocity = new_value, self._velocity[1]
 
     @property
@@ -193,19 +223,17 @@ class Sprite(BasicSprite, PymunkMixin):
         return self.velocity[1]
 
     @change_y.setter
-    def change_y(self, new_value: float):
+    def change_y(self, new_value: float) -> None:
         self._velocity = self._velocity[0], new_value
 
     @property
     def hit_box(self) -> HitBox:
-        """
-        Get or set the hit box for this sprite.
-        """
+        """Get or set the hit box for this sprite."""
         return self._hit_box
 
     @hit_box.setter
-    def hit_box(self, hit_box: Union[HitBox, RotatableHitBox]):
-        if type(hit_box) == HitBox:
+    def hit_box(self, hit_box: HitBox | RotatableHitBox) -> None:
+        if type(hit_box) is HitBox:
             self._hit_box = hit_box.create_rotatable(self.angle)
         else:
             # Mypy doesn't seem to understand the type check above
@@ -218,7 +246,7 @@ class Sprite(BasicSprite, PymunkMixin):
         return self._texture
 
     @texture.setter
-    def texture(self, texture: Texture):
+    def texture(self, texture: Texture) -> None:
         if texture == self._texture:
             return
 
@@ -245,18 +273,14 @@ class Sprite(BasicSprite, PymunkMixin):
             sprite_list._update_texture(self)
 
     @property
-    def properties(self) -> Dict[str, Any]:
-        """
-        Get or set custom sprite properties.
-
-        :rtype: Dict[str, Any]
-        """
+    def properties(self) -> dict[str, Any]:
+        """Get or set custom sprite properties."""
         if self._properties is None:
             self._properties = {}
         return self._properties
 
     @properties.setter
-    def properties(self, value):
+    def properties(self, value: dict[str, Any]) -> None:
         self._properties = value
 
     # --- Movement methods -----
@@ -265,7 +289,8 @@ class Sprite(BasicSprite, PymunkMixin):
         """
         Adjusts a Sprites forward.
 
-        :param speed: speed
+        Args:
+            speed: The speed at which the sprite moves.
         """
         angle_rad = math.radians(self.angle)
         self.center_x += math.sin(angle_rad) * speed
@@ -275,7 +300,8 @@ class Sprite(BasicSprite, PymunkMixin):
         """
         Adjusts a Sprite backwards.
 
-        :param speed: speed
+        Args:
+            speed: The speed at which the sprite moves.
         """
         self.forward(-speed)
 
@@ -283,7 +309,8 @@ class Sprite(BasicSprite, PymunkMixin):
         """
         Adjusts a Sprite sideways.
 
-        :param speed: speed
+        Args:
+            speed: The speed at which the sprite moves.
         """
         angle_rad = math.radians(self.angle + 90)
         self.center_x += math.sin(angle_rad) * speed
@@ -293,7 +320,8 @@ class Sprite(BasicSprite, PymunkMixin):
         """
         Rotate the sprite right by the passed number of degrees.
 
-        :param theta: change in angle, in degrees
+        Args:
+            theta: Change in angle, in degrees
         """
         self.angle = self._angle + theta
 
@@ -301,7 +329,8 @@ class Sprite(BasicSprite, PymunkMixin):
         """
         Rotate the sprite left by the passed number of degrees.
 
-        :param theta: change in angle, in degrees
+        Args:
+            theta: Change in angle, in degrees
         """
         self.angle = self._angle - theta
 
@@ -310,63 +339,32 @@ class Sprite(BasicSprite, PymunkMixin):
         Stop the Sprite's motion by setting the velocity and angle change to 0.
         """
         self.velocity = 0, 0
-        self.change_angle = 0
-
-    def face_point(self, point: Point) -> None:
-        """
-        Face the sprite towards a point. Assumes sprite image is facing upwards.
-
-        :param Point point: Point to face towards.
-        """
-        angle = get_angle_degrees(self.center_x, self.center_y, point[0], point[1])
-
-        # Reverse angle because sprite angles are backwards
-        self.angle = -angle
-
-    # ---- Draw Methods ----
-
-    def draw(self, *, filter=None, pixelated=None, blend_function=None) -> None:
-        """
-        A debug method which draws the sprite into the current OpenGL context.
-
-        .. warning:: You are probably looking for :py:meth:`SpriteList.draw() <arcade.SpriteList.draw>`!
-
-                     Drawing individual sprites is slow compared to using :py:class:`~arcade.SpriteList`.
-                     See :ref:`pg_spritelists_why` for more information.
-
-        This method should not be relied on. It may be removed one day.
-
-        :param filter: Optional parameter to set OpenGL filter, such as
-                       `gl.GL_NEAREST` to avoid smoothing.
-        :param pixelated: ``True`` for pixelated and ``False`` for smooth interpolation.
-                          Shortcut for setting filter=GL_NEAREST.
-        :param blend_function: Optional parameter to set the OpenGL blend function used for drawing the sprite list,
-                               such as 'arcade.Window.ctx.BLEND_ADDITIVE' or 'arcade.Window.ctx.BLEND_DEFAULT'
-        """
-        if self._sprite_list is None:
-            from arcade import SpriteList
-
-            self._sprite_list = SpriteList(capacity=1)
-
-        self._sprite_list.append(self)
-        self._sprite_list.draw(
-            filter=filter, pixelated=pixelated, blend_function=blend_function
-        )
-        self._sprite_list.remove(self)
+        self.change_angle = 0.0
 
     # ----Update Methods ----
 
-    def update(self) -> None:
+    def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
         """
         The default update method for a Sprite. Can be overridden by a subclass.
 
         This method moves the sprite based on its velocity and angle change.
+
+        Args:
+            delta_time: Time since last update in seconds
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments
         """
+        # NOTE: change_x and change_y (or velocity) are historically defined as
+        # the change in position per frame. To convert to change in position per
+        # second, we multiply by 60 (frames per second).
+        # Users can define these values in any unit they want, but this breaks
+        # compatibility with physics engines. Consider changing this in the future.
+        delta_time *= 60
         self.position = (
-            self._position[0] + self.change_x,
-            self._position[1] + self.change_y,
+            self._position[0] + self.change_x * delta_time,
+            self._position[1] + self.change_y * delta_time,
         )
-        self.angle += self.change_angle
+        self.angle += self.change_angle * delta_time
 
     # ----Utility Methods----
 
@@ -380,13 +378,13 @@ class Sprite(BasicSprite, PymunkMixin):
             if sprite_list.spatial_hash is not None:
                 sprite_list.spatial_hash.move(self)
 
-    def append_texture(self, texture: Texture):
+    def append_texture(self, texture: Texture) -> None:
         """
         Appends a new texture to the list of textures that can be
         applied to this sprite.
 
-        :param arcade.Texture texture: Texture to add to the list of available textures
-
+        Args:
+            texture: Texture to add to the list of available textures
         """
         self.textures.append(texture)
 
@@ -395,7 +393,8 @@ class Sprite(BasicSprite, PymunkMixin):
         Set the current texture by texture number.
         The number is the index into ``self.textures``.
 
-        :param int texture_no: Index into ``self.textures``
+        Args:
+            texture_no: Index into ``self.textures``
         """
         texture = self.textures[texture_no]
         self.texture = texture
@@ -411,7 +410,7 @@ class Sprite(BasicSprite, PymunkMixin):
 
         self.physics_engines.clear()
 
-    def register_physics_engine(self, physics_engine) -> None:
+    def register_physics_engine(self, physics_engine: Any) -> None:
         """
         Register a physics engine on the sprite.
         This is only needed if you actually need a reference
@@ -423,5 +422,19 @@ class Sprite(BasicSprite, PymunkMixin):
 
         It can for example be the pymunk physics engine
         or a custom one you made.
+
+        Args:
+            physics_engine: The physics engine to register
         """
         self.physics_engines.append(physics_engine)
+
+    def sync_hit_box_to_texture(self) -> None:
+        """
+        Update the sprite's hit box to match the current texture's hit box.
+        """
+        self.hit_box = RotatableHitBox(
+            self.texture.hit_box_points,
+            position=self._position,
+            angle=self.angle,
+            scale=self._scale,
+        )

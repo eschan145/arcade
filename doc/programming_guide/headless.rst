@@ -17,7 +17,7 @@ This should work both in a desktop environment and on servers and even
 in virtual machines. Both software and hardware rendering should
 be acceptable depending on your use case.
 
-We are leveraging the headless mode in pyglet. If you are seeking knowledege
+We are leveraging the headless mode in pyglet. If you are seeking knowledge
 about the inner workings of headless, that's the right place to look.
 
 Enabling headless mode
@@ -28,13 +28,13 @@ This can be done in the following ways:
 
 .. code:: py
 
-    # Before arcade is imported
+    # Before Arcade is imported
     import os
     os.environ["ARCADE_HEADLESS"] = "True"
 
     # The above is a shortcut for
     import pyglet
-    pyglet.options["headless"] = True
+    pyglet.options.headless = True
 
 This of course also means you can configure headless externally.
 
@@ -76,19 +76,9 @@ created through the :py:class:`~arcade.ArcadeContext` if needed.
 .. Warning::
 
     If you are creating and destroying a lot of arcade objects
-    you might want to look into :py:attr:`arcade.ArcadeContext.gc_mode`.
+    you might want to look into :py:attr:`arcade.gl.Context.gc_mode`.
     In Arcade we normally do garbage collection of OpenGL objects
-    once per frame by calling :py:meth:`~arcade.ArcadeContext.gc`.
-
-.. Warning::
-
-    If you are loading an increasing amount of textures you
-    might need to clean up the texture cache. This only
-    caches :py:class:`arcade.Texture` objects. See
-    :py:func:`~arcade.cleanup_texture_cache`.
-    This might also
-    involve removing them from the global texture atlas
-    if you are using these textures on sprites.
+    once per frame by calling :py:meth:`~arcade.gl.Context.gc`.
 
 Examples
 --------
@@ -192,10 +182,10 @@ to a physical device (graphics card) or a virtual card/device.
 .. code:: py
 
     # Default setting
-    pyglet.options['headless_device'] = 0
+    pyglet.options.headless_device = 0
 
     # Use the second gpu/device
-    pyglet.options['headless_device'] = 1
+    pyglet.options.headless_device = 1
 
 Issues?
 -------

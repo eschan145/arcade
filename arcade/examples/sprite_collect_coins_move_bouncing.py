@@ -13,12 +13,12 @@ import random
 import arcade
 
 # --- Constants ---
-SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_COIN = 0.2
+SPRITE_SCALING_PLAYER = 0.75
+SPRITE_SCALING_COIN = 0.3
 COIN_COUNT = 50
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Sprite Collect Moving and Bouncing Coins Example"
 
 
@@ -31,7 +31,7 @@ class Coin(arcade.Sprite):
         self.change_x = 0
         self.change_y = 0
 
-    def update(self):
+    def update(self, delta_time: float = 1 / 60):
 
         # Move the coin
         self.center_x += self.change_x
@@ -130,7 +130,7 @@ class MyGame(arcade.Window):
 
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
-        self.all_sprites_list.update()
+        self.all_sprites_list.update(delta_time)
 
         # Generate a list of all sprites that collided with the player.
         hit_list = arcade.check_for_collision_with_list(self.player_sprite,

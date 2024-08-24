@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import random
+
 import arcade
 from arcade.texture import transforms
 
@@ -33,6 +36,11 @@ class App(arcade.Window):
         for i, tex in enumerate(self.textures):
             self.spritelist.append(arcade.Sprite(tex, center_x=100 + 130 * i, center_y=300))
 
+        for i in range(len(TRANSFORMS)):
+            sprite = self.spritelist[i]
+            sprite.texture = sprite.texture.transform(TRANSFORMS[i])
+            sprite.sync_hit_box_to_texture()
+
     def on_draw(self):
         self.clear()
         self.spritelist.draw()
@@ -41,7 +49,7 @@ class App(arcade.Window):
     def on_key_press(self, symbol: int, modifiers: int):
         for sprite in self.spritelist:
             sprite.texture = sprite.texture.transform(random.choice(TRANSFORMS))
-            sprite._hit_box_points = None
+            sprite.sync_hit_box_to_texture()
 
 
 App().run()

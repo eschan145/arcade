@@ -19,8 +19,8 @@ If Python and Arcade are installed, this example can be run from the
 command line with:
 python -m arcade.examples.performance_statistics
 """
+from __future__ import annotations
 import random
-from typing import Optional
 
 import arcade
 
@@ -29,8 +29,8 @@ SPRITE_SCALING_COIN = 0.25
 SPRITE_NATIVE_SIZE = 128
 SPRITE_SIZE = int(SPRITE_NATIVE_SIZE * SPRITE_SCALING_COIN)
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Performance Statistics Display Example"
 
 # Size of performance graphs and distance between them
@@ -39,7 +39,6 @@ GRAPH_HEIGHT = 120
 GRAPH_MARGIN = 5
 
 COIN_COUNT = 1500
-
 
 # Turn on tracking for the number of event handler
 # calls and the average execution time of each type.
@@ -54,7 +53,7 @@ class Coin(arcade.BasicSprite):
         self.change_x = 0
         self.change_y = 0
 
-    def update(self):
+    def update(self, delta_time: float = 1/60):
         """ Update the sprite. """
         # Setting the position is faster than setting x & y individually
         self.position = (
@@ -82,9 +81,9 @@ class MyGame(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
         # Variables to hold game objects and performance info
-        self.coin_list: Optional[arcade.SpriteList] = None
-        self.perf_graph_list: Optional[arcade.SpriteList] = None
-        self.fps_text: Optional[arcade.Text] = None
+        self.coin_list: arcade.SpriteList | None = None
+        self.perf_graph_list: arcade.SpriteList | None = None
+        self.fps_text: arcade.Text | None = None
         self.frame_count: int = 0  # for tracking the reset interval
 
         self.coin_texture = arcade.load_texture(":resources:images/items/coinGold.png")

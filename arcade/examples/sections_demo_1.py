@@ -15,7 +15,7 @@ Note:
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.sections_demo_1
 """
-from typing import Optional
+from __future__ import annotations
 
 import arcade
 
@@ -59,7 +59,7 @@ class ScreenPart(arcade.Section):
         self.box.position = self.left + (self.width / 2), 50
 
         # variable that will hold the Box when it's being dragged
-        self.hold_box: Optional[Box] = None
+        self.hold_box: Box | None = None
 
     def on_update(self, delta_time: float):
         # call on_update on the owned Box
@@ -75,7 +75,7 @@ class ScreenPart(arcade.Section):
                              self.top - 50, arcade.color.BLACK, 16)
 
         # draw the box
-        self.box.draw()
+        arcade.draw_sprite(self.box)
 
     def on_mouse_drag(self, x: float, y: float, dx: float, dy: float,
                       _buttons: int, _modifiers: int):
@@ -127,7 +127,7 @@ class GameView(arcade.View):
 
     def on_draw(self):
         # clear the screen
-        self.clear(arcade.color.BEAU_BLUE)
+        self.clear(color=arcade.color.BEAU_BLUE)
 
         # draw a line separating each Section
         arcade.draw_line(self.window.width / 2, 0, self.window.width / 2,

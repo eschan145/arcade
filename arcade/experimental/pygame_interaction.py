@@ -12,8 +12,10 @@ but should work with any recent version of Pygame.
     pip install -I pygame-ce==2.1.3
 
 """
+
+from __future__ import annotations
+
 import math
-from typing import Tuple
 
 import pygame  # type: ignore
 
@@ -27,7 +29,7 @@ class SurfaceTexture:
     making it simple to synchronize the data.
     """
 
-    def __init__(self, ctx: arcade.ArcadeContext, size: Tuple[int, int]):
+    def __init__(self, ctx: arcade.ArcadeContext, size: tuple[int, int]):
         self._ctx = ctx
         self._size = size
         self._surface = pygame.Surface(size, flags=pygame.SRCALPHA)
@@ -63,7 +65,7 @@ class SurfaceTexture:
         )
 
     @property
-    def size(self) -> Tuple[int, int]:
+    def size(self) -> tuple[int, int]:
         return self._size
 
     @property
@@ -89,7 +91,6 @@ class PygameInteraction(arcade.Window):
     def __init__(self):
         super().__init__(512, 512, "Pygame Interaction")
         self.surface_texture = SurfaceTexture(self.ctx, size=(160, 160))
-        self.time = 0
 
     def on_draw(self):
         self.clear()
@@ -113,10 +114,6 @@ class PygameInteraction(arcade.Window):
         # Write the surface to the texture and draw it
         self.surface_texture.write_surface_to_texture()
         self.surface_texture.draw()
-
-    def on_update(self, delta_time):
-        # self.time += delta_time
-        pass
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.ESCAPE:

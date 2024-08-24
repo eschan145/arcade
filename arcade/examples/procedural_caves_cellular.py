@@ -11,7 +11,6 @@ python -m arcade.examples.procedural_caves_cellular
 import random
 import arcade
 import timeit
-from pyglet.math import Vec2
 
 # Sprite scaling. Make this larger, like 0.5 to zoom in and add
 # 'mystery' to what you can see. Make it smaller, like 0.1 to see
@@ -70,7 +69,12 @@ def count_alive_neighbors(grid, x, y):
             neighbor_y = y + j
             if i == 0 and j == 0:
                 continue
-            elif neighbor_x < 0 or neighbor_y < 0 or neighbor_y >= height or neighbor_x >= width:
+            elif (
+                neighbor_x < 0 or
+                neighbor_y < 0 or
+                neighbor_y >= height or
+                neighbor_x >= width
+            ):
                 # Edges are considered alive. Makes map more likely to appear naturally closed.
                 alive_count += 1
             elif grid[neighbor_y][neighbor_x] == 1:
@@ -112,12 +116,12 @@ class InstructionView(arcade.View):
 
         # Reset the viewport, necessary if we have a scrolling game and we need
         # to reset the viewport back to the start so we can see what we draw.
-        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+        self.window.default_camera.use()
 
     def on_draw(self):
         """ Draw this view """
         self.clear()
-        arcade.draw_text("Loading...", self.window.width / 2, self.window.height / 2,
+        arcade.draw_text("Loading...", self.window.width // 2, self.window.height // 2,
                          arcade.color.BLACK, font_size=50, anchor_x="center")
 
     def on_update(self, dt):
@@ -153,16 +157,16 @@ class GameView(arcade.View):
         self.up_pressed = False
         self.down_pressed = False
 
-        # Create the cameras. One for the GUI, one for the sprites.
-        # We scroll the 'sprite world' but not the GUI.
-        self.camera_sprites = arcade.SimpleCamera()
-        self.camera_gui = arcade.SimpleCamera()
-
-        self.window.background_color = arcade.color.BLACK
-
         self.sprite_count_text = None
         self.draw_time_text = None
         self.processing_time_text = None
+
+        # Create the cameras. One for the GUI, one for the sprites.
+        # We scroll the 'sprite world' but not the GUI.
+        self.camera_sprites = arcade.camera.Camera2D()
+        self.camera_gui = arcade.camera.Camera2D()
+
+        self.window.background_color = arcade.color.BLACK
 
     def setup(self):
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
@@ -207,11 +211,6 @@ class GameView(arcade.View):
                 # Not in a wall! Success!
                 placed = True
 
-        self.scroll_to_player(1.0)
-
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite,
-                                                         self.wall_list)
-
         # Draw info on the screen
         sprite_count = len(self.wall_list)
         output = f"Sprite Count: {sprite_count:,}"
@@ -231,6 +230,11 @@ class GameView(arcade.View):
                                                 20,
                                                 self.window.height - 60,
                                                 arcade.color.WHITE, 16)
+
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite,
+                                                         self.wall_list)
+
+        self.scroll_to_player(1.0)
 
     def on_draw(self):
         """ Render the screen. """
@@ -302,27 +306,30 @@ class GameView(arcade.View):
         elif key == arcade.key.RIGHT:
             self.right_pressed = False
 
-    def scroll_to_player(self, speed=CAMERA_SPEED):
+    def scroll_to_player(self, camera_speed):
         """
         Scroll the window to the player.
 
-        if CAMERA_SPEED is 1, the camera will immediately move to the desired position.
+        if camera_speed is 1, the camera will immediately move to the desired position.
         Anything between 0 and 1 will have the camera move to the location with a smoother
         pan.
         """
 
-        position = Vec2(self.player_sprite.center_x - self.window.width / 2,
-                        self.player_sprite.center_y - self.window.height / 2)
-        self.camera_sprites.move_to(position, speed)
-        self.camera_sprites.update()
+        position = (self.player_sprite.center_x, self.player_sprite.center_y)
+        self.camera_sprites.position = arcade.math.lerp_2d(
+            self.camera_sprites.position,
+            position,
+            camera_speed,
+        )
 
     def on_resize(self, width: int, height: int):
         """
         Resize window
         Handle the user grabbing the edge and resizing the window.
         """
-        self.camera_sprites.resize(width, height)
-        self.camera_gui.resize(width, height)
+        super().on_resize(width, height)
+        self.camera_sprites.match_screen(and_projection=True)
+        self.camera_gui.match_screen(and_projection=True)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -335,7 +342,7 @@ class GameView(arcade.View):
         self.physics_engine.update()
 
         # Scroll the screen to the player
-        self.scroll_to_player()
+        self.scroll_to_player(camera_speed=CAMERA_SPEED)
 
         # Save the time it took to do this.
         self.processing_time = timeit.default_timer() - start_time

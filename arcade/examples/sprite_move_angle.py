@@ -13,8 +13,8 @@ import math
 
 SPRITE_SCALING = 0.5
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Move Sprite by Angle Example"
 
 MOVEMENT_SPEED = 5
@@ -33,7 +33,7 @@ class Player(arcade.Sprite):
         # Create a variable to hold our speed. 'angle' is created by the parent
         self.speed = 0
 
-    def update(self):
+    def update(self, delta_time: float = 1/60):
         # Rotate the ship
         self.angle += self.change_angle
 
@@ -96,7 +96,7 @@ class MyGame(arcade.Window):
 
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
-        self.player_list.update()
+        self.player_list.update(delta_time)
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """

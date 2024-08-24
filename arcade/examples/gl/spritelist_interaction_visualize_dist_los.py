@@ -13,11 +13,12 @@ colliding with something.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.spritelist_interaction_visualize_dist_los
 """
+
 import random
 import arcade
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 NUM_COINS = 500
 NUM_WALLS = 75
 INTERACTION_RADIUS = 300
@@ -150,7 +151,7 @@ class SpriteListInteraction(arcade.Window):
                 // All the pixels in the line should just be white
                 fragColor = vec4(1.0, 1.0, 1.0, 1.0);
             }
-            """
+            """,
         )
         # Configure program with maximum distance
         self.program_visualize_dist["maxDistance"] = INTERACTION_RADIUS
@@ -178,10 +179,15 @@ class SpriteListInteraction(arcade.Window):
         # use correctly named input name(s). in_pos in this example
         # what will automatically map in the position buffer to the vertex shader.
         self.coins.geometry.render(self.program_visualize_dist, vertices=len(self.coins))
-        self.player.draw()
+        arcade.draw_sprite(self.player)
 
         # Visualize the interaction radius
-        arcade.draw_circle_filled(self.player.center_x, self.player.center_y, INTERACTION_RADIUS, (255, 255, 255, 64))
+        arcade.draw_circle_filled(
+            center_x=self.player.center_x,
+            center_y=self.player.center_y,
+            radius=INTERACTION_RADIUS,
+            color=(255, 255, 255, 64)
+        )
 
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
         # Move the sprite to mouse position

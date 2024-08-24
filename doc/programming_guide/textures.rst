@@ -5,7 +5,7 @@ Textures
 Introduction
 ------------
 
-The :py:class:`arcade.Texture` type is how arcade normally interacts with
+The :py:class:`arcade.Texture` type is how Arcade normally interacts with
 images either loaded from disk or created manually. This is basically a
 wrapper for PIL/Pillow images including detection for hit box data
 using pymunk depending on the selected hit box algorithm. These texture
@@ -13,9 +13,9 @@ objects are in other words responsible to provide raw RGBA pixel
 data to OpenGL and hit box geometry to the sprite engine.
 
 There is another texture type in Arcade in the lower level
-OpenGL API: :py:class:`arcade.gl.Texture`. This represents an
+OpenGL API: :py:class:`arcade.gl.Texture2D`. This represents an
 actual OpenGL texture and should only be used when dealing
-with the low level rendering API :py:mod:`arcade.gl`.
+with the low level rendering API.
 
 Textures can be created/loaded before or after the window is created
 because they don't interact with OpenGL directly.
@@ -23,13 +23,13 @@ because they don't interact with OpenGL directly.
 Texture Uniqueness
 ------------------
 
-When a texture is created a ``name`` is required. This should be a unique
+When a texture is created a ``hash/name`` is required. This should be a unique
 string. If two more more textures have the same name we will run into
 trouble. When loading textures the absolute path to the file is used
 as part of the name including vertical/horizontal/diagonal, size and
 other parameter for a truly unique name.
 
-When loading texture through arcade the name of the texture will be
+When loading texture through Arcade the name of the texture will be
 the absolute path to the image and various parameters such as size,
 flipping, xy position etc.
 
@@ -41,7 +41,7 @@ because we rely in the transformed pixel data to get the hit box.
 Texture Cache
 -------------
 
-Arcade is caching texture instances based on the ``name`` attribute
+Arcade is caching texture instances based on the ``name/hash`` attribute
 to significantly speed up loading times.
 
 .. code:: python
@@ -59,7 +59,7 @@ to significantly speed up loading times.
 The above also applies when using :py:func:`arcade.load_texture` or other
 texture loading functions.
 
-Arcade's texture cache can be cleared using :py:func:`arcade.cleanup_texture_cache`.
+Arcade's default texture cache can be cleared using ``arcade.texture.default_texture_cache.flush()``
 
 Custom Textures
 ---------------

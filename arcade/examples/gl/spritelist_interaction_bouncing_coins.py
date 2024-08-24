@@ -12,6 +12,7 @@ The window can be resized.
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.gl.spritelist_interaction_bouncing_coins
 """
+
 from array import array
 from random import randint, uniform
 
@@ -19,8 +20,8 @@ import arcade
 from arcade.gl.types import BufferDescription
 from arcade import hitbox
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 
 NUM_COINS = 10_000
 
@@ -96,7 +97,7 @@ class GPUBouncingCoins(arcade.Window):
 
         # Buffer with some quick random velocities for our coins
         self.buffer_velocity_1 = self.ctx.buffer(
-            data=array('f', [uniform(-1, 1) for _ in range(NUM_COINS * 2)])
+            data=array("f", [uniform(-1, 1) for _ in range(NUM_COINS * 2)])
         )
         # Second velocity buffer
         self.buffer_velocity_2 = self.ctx.buffer(reserve=self.buffer_velocity_1.size)
@@ -131,13 +132,13 @@ class GPUBouncingCoins(arcade.Window):
             [
                 self.coins.buffer_positions,
                 self.buffer_velocity_2,
-            ]
+            ],
         )
 
         self.coins.draw()
 
         # Swap things around for next frame
-        self.buffer_velocity_1, self.buffer_velocity_2 = self.buffer_velocity_2, self.buffer_velocity_1
+        (self.buffer_velocity_1, self.buffer_velocity_2) = self.buffer_velocity_2, self.buffer_velocity_1  # noqa
         self.geometry_1, self.geometry_2 = self.geometry_2, self.geometry_1
 
     def on_update(self, delta_time: float):

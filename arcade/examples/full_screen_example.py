@@ -10,6 +10,7 @@ python -m arcade.examples.full_screen_example
 """
 
 import arcade
+from arcade.types import LRBT
 
 SPRITE_SCALING = 0.5
 
@@ -38,10 +39,13 @@ class MyGame(arcade.Window):
         # This will get the size of the window, and set the viewport to match.
         # So if the window is 1000x1000, then so will our viewport. If
         # you want something different, then use those coordinates instead.
-        width, height = self.get_size()
-        self.set_viewport(0, width, 0, height)
         self.background_color = arcade.color.AMAZON
         self.example_image = arcade.load_texture(":resources:images/tiles/boxCrate_double.png")
+
+        # The camera used to update the viewport and projection on screen resize.
+        self.camera = arcade.camera.Camera2D(position=(0, 0))
+        self.camera.projection = LRBT(left=0, right=self.width, bottom=0, top=self.height)
+        self.camera.viewport = LRBT(left=0, right=self.width, bottom=0, top=self.height)
 
     def on_draw(self):
         """
@@ -49,25 +53,40 @@ class MyGame(arcade.Window):
         """
 
         self.clear()
-
-        # Get viewport dimensions
-        left, screen_width, bottom, screen_height = self.get_viewport()
-
-        text_size = 18
-        # Draw text on the screen so the user has an idea of what is happening
-        arcade.draw_text("Press F to toggle between full screen and windowed mode, unstretched.",
-                         screen_width // 2, screen_height // 2 - 20,
-                         arcade.color.WHITE, text_size, anchor_x="center")
-        arcade.draw_text("Press S to toggle between full screen and windowed mode, stretched.",
-                         screen_width // 2, screen_height // 2 + 20,
-                         arcade.color.WHITE, text_size, anchor_x="center")
-
+        self.camera.use()
+        self.camera.position = 0, 0
         # Draw some boxes on the bottom so we can see how they change
-        for x in range(64, 800, 128):
-            y = 64
+        for count in range(20):
+            x = count * 128
+            y = count * 128
             width = 128
             height = 128
-            arcade.draw_texture_rectangle(x, y, width, height, self.example_image)
+            arcade.draw_texture_rect(self.example_image, arcade.XYWH(x, y, width, height))
+
+        arcade.draw_rect_outline(
+            LRBT(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT),
+            color=arcade.color.WHITE,
+            border_width=5,
+        )
+
+        # Draw text on the screen so the user has an idea of what is happening
+        text_size = 18
+        arcade.draw_text(
+            "Press F to toggle between full screen and windowed mode, unstretched.",
+            x=SCREEN_WIDTH // 2,
+            y=SCREEN_HEIGHT // 2 - 20,
+            color=arcade.color.WHITE,
+            font_size=text_size,
+            anchor_x="center",
+        )
+        arcade.draw_text(
+            "Press S to toggle between full screen and windowed mode, stretched.",
+            x=SCREEN_WIDTH // 2,
+            y=SCREEN_HEIGHT // 2 + 20,
+            color=arcade.color.WHITE,
+            font_size=text_size,
+            anchor_x="center",
+        )
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -77,8 +96,8 @@ class MyGame(arcade.Window):
 
             # Get the window coordinates. Match viewport to window coordinates
             # so there is a one-to-one mapping.
-            width, height = self.get_size()
-            self.set_viewport(0, width, 0, height)
+            self.camera.projection = LRBT(left=0, right=self.width, bottom=0, top=self.height)
+            self.camera.viewport = LRBT(left=0, right=self.width, bottom=0, top=self.height)
 
         if key == arcade.key.S:
             # User hits s. Flip between full and not full screen.
@@ -87,7 +106,21 @@ class MyGame(arcade.Window):
             # Instead of a one-to-one mapping, stretch/squash window to match the
             # constants. This does NOT respect aspect ratio. You'd need to
             # do a bit of math for that.
-            self.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+            self.camera.projection = LRBT(
+                left=0,
+                right=SCREEN_WIDTH,
+                bottom=0,
+                top=SCREEN_HEIGHT,
+            )
+            self.camera.viewport = LRBT(
+                left=0,
+                right=self.width,
+                bottom=0,
+                top=self.height,
+            )
+
+        if key == arcade.key.ESCAPE:
+            self.close()
 
 
 def main():

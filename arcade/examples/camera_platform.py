@@ -68,8 +68,10 @@ class MyGame(arcade.Window):
         self.fps_message = None
 
         # Cameras
-        self.camera = None
+        self.camera: arcade.camera.Camera2D = None
         self.gui_camera = None
+
+        self.camera_shake = None
 
         self.shake_offset_1 = 0
         self.shake_offset_2 = 0
@@ -79,15 +81,15 @@ class MyGame(arcade.Window):
         # Text
         self.text_fps = arcade.Text(
             "",
-            start_x=10,
-            start_y=40,
+            x=10,
+            y=40,
             color=arcade.color.BLACK,
             font_size=14,
         )
         self.text_score = arcade.Text(
             f"Score: {self.score}",
-            start_x=10,
-            start_y=20,
+            x=10,
+            y=20,
             color=arcade.color.BLACK,
             font_size=14,
         )
@@ -129,9 +131,13 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = 128
         self.scene.add_sprite("Player", self.player_sprite)
 
-        viewport = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.camera = arcade.Camera(viewport=viewport)
-        self.gui_camera = arcade.Camera(viewport=viewport)
+        self.camera = arcade.camera.Camera2D()
+
+        self.camera_shake = arcade.camera.grips.ScreenShake2D(self.camera.view_data,
+                                                              max_amplitude=12.5,
+                                                              acceleration_duration=0.05,
+                                                              falloff_time=0.20,
+                                                              shake_frequency=15.0)
 
         # Center camera on user
         self.pan_camera_to_user()
@@ -156,38 +162,39 @@ class MyGame(arcade.Window):
 
     def on_resize(self, width, height):
         """Resize window"""
-        self.camera.resize(width, height)
-        self.gui_camera.resize(width, height)
+        super().on_resize(width, height)
+        self.camera.match_screen(and_projection=True)
 
     def on_draw(self):
         """Render the screen."""
         self.clear()
 
-        self.camera.use()
+        self.camera_shake.update_camera()
+        with self.camera.activate():
+            # Draw our Scene
+            self.scene.draw()
+        # Readjust the camera so the screen shake doesn't affect
+        # the camera following algorithm.
+        self.camera_shake.readjust_camera()
 
-        # Draw our Scene
-        self.scene.draw()
+        with self.default_camera.activate():
+            # Update fps text periodically
+            if self.last_time and self.frame_count % 60 == 0:
+                fps = 1.0 / (time.time() - self.last_time) * 60
+                self.text_fps.text = f"FPS: {fps:5.2f}"
 
-        self.gui_camera.use()
+            self.text_fps.draw()
 
-        # Update fps text periodically
-        if self.last_time and self.frame_count % 60 == 0:
-            fps = 1.0 / (time.time() - self.last_time) * 60
-            self.text_fps.text = f"FPS: {fps:5.2f}"
+            if self.frame_count % 60 == 0:
+                self.last_time = time.time()
 
-        self.text_fps.draw()
+            # Draw Score
+            self.text_score.draw()
 
-        if self.frame_count % 60 == 0:
-            self.last_time = time.time()
-
-        # Draw Score
-        self.text_score.draw()
-
-        # Draw game over
-        if self.game_over:
-            x = 200 + self.camera.position[0]
-            y = 200 + self.camera.position[1]
-            arcade.draw_text("Game Over", x, y, arcade.color.BLACK, 30)
+            # Draw game over
+            if self.game_over:
+                arcade.draw_text("Game Over", self.width/2, self.height/2, arcade.color.BLACK,
+                                 30)
 
         self.frame_count += 1
 
@@ -214,22 +221,25 @@ class MyGame(arcade.Window):
         """
         Manage Scrolling
 
-        :param panning_fraction: Number from 0 to 1. Higher the number, faster we
-                                 pan the camera to the user.
+        Args:
+            panning_fraction:
+                Number from 0 to 1. Higher the number, faster we
+                pan the camera to the user.
         """
 
         # This spot would center on the user
-        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player_sprite.center_y - (
-            self.camera.viewport_height / 2
-        )
-        if screen_center_x < 0:
-            screen_center_x = 0
-        if screen_center_y < 0:
-            screen_center_y = 0
+        screen_center_x, screen_center_y = self.player_sprite.position
+        if screen_center_x < self.camera.viewport_width/2:
+            screen_center_x = self.camera.viewport_width/2
+        if screen_center_y < self.camera.viewport_height/2:
+            screen_center_y = self.camera.viewport_height/2
         user_centered = screen_center_x, screen_center_y
 
-        self.camera.move_to(user_centered, panning_fraction)
+        self.camera.position = arcade.math.lerp_2d(
+            self.camera.position,
+            user_centered,
+            panning_fraction,
+        )
 
     def on_update(self, delta_time):
         """Movement and game logic"""
@@ -240,6 +250,7 @@ class MyGame(arcade.Window):
         # Call update on all sprites
         if not self.game_over:
             self.physics_engine.update()
+            self.camera_shake.update(delta_time)
 
         coins_hit = arcade.check_for_collision_with_list(
             self.player_sprite, self.scene.get_sprite_list("Coins")
@@ -254,8 +265,7 @@ class MyGame(arcade.Window):
         )
         for bomb in bombs_hit:
             bomb.remove_from_sprite_lists()
-            print("Pow")
-            self.camera.shake((4, 7))
+            self.camera_shake.start()
 
         # Pan to the user
         self.pan_camera_to_user(panning_fraction=0.12)
